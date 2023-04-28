@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import Thread from './components/Thread.vue';
 </script>
 
 <template>
-  <div>
-    <p>thread-notes</p>
+  <div class="fixed">
+    <Thread />
+    <h1>thread-notes</h1>
   </div>
 </template>
 
