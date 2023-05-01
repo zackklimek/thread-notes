@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router';
-// import Thread from './components/Thread.vue';
 </script>
 
 <template>
-  <span>
+  <div id="navbar">
     <RouterLink to="/"><a class="link">Compose Thread</a></RouterLink>
     <RouterLink to="/notes"><a class="link">View Notes</a></RouterLink>
-  </span>
+  </div>
   <div class="fixed">
-    <!-- <Thread /> -->
     <router-view />
     <h1>thread-notes</h1>
   </div>
@@ -21,6 +19,10 @@ import { RouterLink } from 'vue-router';
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+#navbar {
+  padding-bottom: 1.66em;
 }
 
 .fade {

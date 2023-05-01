@@ -1,5 +1,4 @@
 <script setup lang="ts">
-// const DUMMY_DATA = []
 
 import { ref } from "vue";
 

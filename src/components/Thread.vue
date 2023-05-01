@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, Ref, computed } from "vue";
+import { ref, Ref, computed, onMounted } from "vue";
 
 const notes = ref(['']);
 const editing: Ref<boolean> = ref(false);
@@ -7,13 +7,16 @@ const tags: Ref<string[]> = ref([""]);
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
-const b: Ref<undefined | Blob> = ref(undefined);
+let len = computed(() => { return notes.value.length });
+
+const currentBlob: Ref<undefined | Blob> = ref(undefined);
 const currentImg: Ref<string> = ref("");
-const imageUrls: Ref<string[]> = ref([""]);
+const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
+const initialDate: Ref<string> = ref("");
 
 function toggleEdit(i: number) {
     if (editing.value === true) {
-        const newVal: string = document.getElementById(i.toString())!.innerText
+        const newVal: string = document.getElementById('txt' + i.toString())!.innerText
         notes.value[i] = newVal;
     }
     editing.value = !editing.value;
@@ -23,15 +26,16 @@ function enterEvent(index: number) {
     if (editing.value === false) {
         const len: number = notes.value.length;
         const id: string = (len - 1).toString()
-        const newVal: string = document.getElementById(id)!.innerText;
+        const newVal: string = document.getElementById('txt' + id)!.innerText;
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
         tags.value.push("")
-        imageUrls.value[index] = currentImg.value;
+        imageBlobs.value[index] = currentBlob.value;
         currentImg.value = "";
+        currentBlob.value = undefined;
     }
 }
 
-function handleInputEnter() {
+function handleTagsEnter() {
     if (editing.value == true) {
         editing.value = false;
     }
@@ -39,79 +43,118 @@ function handleInputEnter() {
 
 function publishNote() {
     if (editing.value === false) {
-        const trimmedNotes = notes.value.map((n) => n = n.trim())
-        console.log(trimmedNotes)
+        if (notes.value[notes.value.length - 1] === "")
+            notes.value.pop();
+        if (notes.value.length != splitTags.value.length)
+            splitTags.value.pop();
+
+        // console.log('split tags', splitTags.value)
+        // console.log('notes', notes.value)
+        // console.log('blobs', imageBlobs.value)
+
+        for (let i = 0; i < notes.value.length; i++) {
+            let obj = {
+                name: notes.value[i].trim(),
+                blob: imageBlobs.value[i],
+                tags: splitTags,
+                threadIndex: i,
+                threadId: initialDate
+            }
+
+            console.log(obj)
+
+        }
+
     }
 }
 
 
 
 function handleDrop(e: DragEvent) {
-    e.preventDefault()
-    console.log('event', e)
-    // console.log('target', e.target!.id.substring(3))
-    // console.log(e.dataTransfer)
+    e.preventDefault();
+    console.log('event', e);
     if (e.dataTransfer?.files.length != 0 && e.target!.id.substring(3)) {
+        const i = parseInt(e.target!.id.substring(3));
+        console.log(i, len.value)
         const file = e.dataTransfer?.files[0]
-        if (file?.type.startsWith("image/")) {
+        if (file?.type.startsWith("image/") && i === len.value - 1) {
             const blobData = file.slice(0, file.size, file.type);
-            b.value = new Blob([blobData])
-            // console.log(file)
-            currentImg.value = URL.createObjectURL(b.value);
+            currentBlob.value = new Blob([blobData])
+            currentImg.value = URL.createObjectURL(currentBlob.value);
+            editing.value = false;
+        }
+        else if (file?.type.startsWith("image/") && i != len.value - 1 && i < len.value) {
+            const blobData = file.slice(0, file.size, file.type);
+            imageBlobs.value[i] = blobData;
+            editing.value = false;
 
-            /* 
-                push image to cloud storage images
-                populate ref with url
-                v-show img tag
-            */
         }
     }
+    else if (e.dataTransfer?.getData('text/plain')) {
+        console.log('link?', e.dataTransfer?.getData('text/plain'))
+    }
 }
+
+
+function getImageUrl(blob: Blob | undefined): string {
+    console.log('get url from blob')
+    if (blob !== undefined) {
+        return URL.createObjectURL(blob)
+    }
+    return "";
+}
+
+onMounted(() => {
+    initialDate.value = new Date().toISOString();
+    console.log('mounted', initialDate);
+})
 
 </script>
 
 <template>
     <div v-for="(i, index) in notes" :id="'box' + index" :key="index" @dragover.prevent @drop="handleDrop">
-        <div class="pt"></div>
-        <button v-if="!editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
-        <button v-if="editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
-        <img v-if="imageUrls[index] !== '' && index < notes.length - 1" id="importImg" :src="imageUrls[index]" />
-        <img v-if="currentImg !== '' && index === notes.length - 1" :src="currentImg" id="importImg" />
-        <p :id="index.toString()" class="block" :contenteditable="editing || notes.length - 1 == index"
+        <div class="pt" />
+        <button v-if="!editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
+        <button v-if="editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
+        <img v-if="getImageUrl(imageBlobs[index]) !== '' && index < len - 1" id="importImg"
+            :src="getImageUrl(imageBlobs[index])" />
+        <img v-if="currentImg !== '' && index === len - 1" :src="currentImg" id="importImg" />
+        <p :id="'txt' + index.toString()" class="block" :contenteditable="editing || len - 1 == index"
             @keyup.enter="enterEvent(index)">
             {{ i }}
         </p>
         <span class="right" id="position">
-            <span id="position"> {{ index + 1 }} / {{ notes.length }}</span>
+            <span id="position"> {{ index + 1 }} / {{ len }}</span>
         </span>
         <br v-if="editing || tags[index] != null" />
-        <div v-if="index == notes.length - 1 || editing" class="footer">
+        <div v-if="index == len - 1 || editing" class="footer">
             <span class="footerText">Tags:</span>
-            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleInputEnter" />
+            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleTagsEnter" />
         </div>
         <span v-if="!editing && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
             v-for="t in splitTags[index]" class="tagText footerText footer">
             #{{ t }}
         </span>
+        <div class="pt" />
     </div>
-    <button v-if="notes.length > 1" @click="publishNote">Publish</button>
+    <button v-if="len > 1" @click="publishNote">Publish</button>
 </template>
 
 <style scoped>
 p {
     padding-top: 6.33px;
-    min-height: 6.33vh;
+    min-height: 3.33vh;
 }
 
 .boxBtn {
-    margin-left: 85%;
-    margin-bottom: 0.33em;
-
+    margin-left: 80%;
+    margin-bottom: 0.66em;
 }
 
 .tagText {
     color: rgb(15, 59, 233);
-    margin-left: 1em;
+    padding-right: 1em;
+    transition: 0.13s;
 }
 
 .footerText {
@@ -134,16 +177,24 @@ p {
 }
 
 #importImg {
-    min-width: 30vh;
-    max-width: 30vh;
-    padding-top: 1.33em;
-    max-height: 50vh;
+    max-width: 66%;
+    /* max-height: 30vh; */
+    width: auto;
+    height: auto;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    transition: 0.3s;
+}
+
+#importImg:hover {
+    transform: scale(1.02);
+    box-shadow: 0 1px 3px rgba(47, 72, 255, 0.719);
 }
 
 #tagsInput {
-    width: 80%;
+    width: 70%;
     background-color: rgb(229, 236, 250);
     margin-left: 1em;
+    font-family: "Raleway", sans-serif;
 }
 
 [id^="box"] {
@@ -154,13 +205,11 @@ p {
     max-width: 40vw;
     padding-right: .66em;
     padding-left: .66em;
-    padding-bottom: .33em;
     padding-top: 0px;
     background-color: rgb(229, 236, 250);
     color: black;
-    margin: 1.66em;
-    box-shadow: 2px 2px 6px rgba(47, 72, 255, 0.719), -2px -2px 6px rgba(47, 72, 255, 0.719),
-        2px -2px 4px rgba(47, 72, 255, 0.719), -2px 2px 4px rgba(47, 72, 255, 0.719);
+    margin: 1.33em;
+    box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719);
     transition: 0.3s;
     border-radius: 5px;
 }
