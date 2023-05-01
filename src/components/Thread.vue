@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { ref, Ref } from "vue";
+import { ref, Ref, computed } from "vue";
 
 const notes = ref(['']);
 const editing: Ref<boolean> = ref(false);
+const tags: Ref<string[]> = ref([]);
+const splitTags = computed(() => {
+    return tags.value.map((t) => t.trim().split(" "))
+});
 
 function toggleEdit(i: number) {
     if (editing.value === true) {
@@ -18,22 +22,45 @@ function enterEvent() {
         const id: string = (len - 1).toString()
         const newVal: string = document.getElementById(id)!.innerText;
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
-        console.log('new value', notes.value)
-        resetText(id)
+        tags.value.push("")
     }
 }
 
-function resetText(id: string) {
-    console.log('reset text', notes.value)
-    document.getElementById(id)!.innerText = "";
-
+function handleInputEnter() {
+    if (editing.value == true) {
+        editing.value = false;
+    }
 }
 
+function publishNote() {
+    if (editing.value === false) {
+        const trimmedNotes = notes.value.map((n) => n = n.trim())
+        console.log(trimmedNotes)
+    }
+}
+
+function handleDrop(e: DragEvent) {
+    e.preventDefault()
+
+    console.log(e.dataTransfer)
+    if (e.dataTransfer?.files.length != 0) {
+        const file = e.dataTransfer?.files[0]
+        if (file?.type.startsWith("image/")) {
+            console.log(file.type)
+
+            /* 
+                push image to cloud storage images
+                populate ref with url
+                v-show img tag
+            */
+        }
+    }
+}
 
 </script>
 
 <template>
-    <div id="box" v-for="(i, index) in notes">
+    <div id="box" v-for="(i, index) in notes" @dragover.prevent @drop="handleDrop">
         <div class="pt"></div>
         <button v-if="!editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
         <button v-if="editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
@@ -44,8 +71,17 @@ function resetText(id: string) {
         <span class="right" id="position">
             <span id="position"> {{ index + 1 }} / {{ notes.length }}</span>
         </span>
+        <br v-if="editing || tags[index] != null" />
+        <div v-if="index == notes.length - 1 || editing" class="footer">
+            <span class="footerText">Tags:</span>
+            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleInputEnter" />
+        </div>
+        <span v-if="!editing && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
+            v-for="t in splitTags[index]" class="tagText footerText footer">
+            #{{ t }}
+        </span>
     </div>
-    <button v-if="notes.length > 1">Publish</button>
+    <button v-if="notes.length > 1" @click="publishNote">Publish</button>
 </template>
 
 <style scoped>
@@ -55,15 +91,43 @@ p {
 }
 
 .boxBtn {
-    margin-left: 80%;
+    margin-left: 85%;
     margin-bottom: 0.33em;
+
 }
 
+.tagText {
+    color: rgb(15, 59, 233);
+    margin-left: 1em;
+}
+
+.footerText {
+    font-size: .8em;
+    width: 100vh;
+}
+
+.footer {
+    margin-bottom: 0.5em;
+    margin-top: 0.33em;
+}
+
+.tagText:hover {
+    color: rgb(97, 125, 235);
+}
+
+
 .pt {
-    padding-top: .33em;
+    padding-top: .66em;
+}
+
+#tagsInput {
+    width: 80%;
+    background-color: rgb(229, 236, 250);
+    margin-left: 1em;
 }
 
 #box {
+    position: relative;
     min-height: 5vh;
     word-wrap: break-word;
     min-width: 40vw;
