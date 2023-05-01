@@ -3,10 +3,13 @@ import { ref, Ref, computed } from "vue";
 
 const notes = ref(['']);
 const editing: Ref<boolean> = ref(false);
-const tags: Ref<string[]> = ref([]);
+const tags: Ref<string[]> = ref([""]);
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
+const b: Ref<undefined | Blob> = ref(undefined);
+const currentImg: Ref<string> = ref("");
+const imageUrls: Ref<string[]> = ref([""]);
 
 function toggleEdit(i: number) {
     if (editing.value === true) {
@@ -16,13 +19,15 @@ function toggleEdit(i: number) {
     editing.value = !editing.value;
 }
 
-function enterEvent() {
+function enterEvent(index: number) {
     if (editing.value === false) {
         const len: number = notes.value.length;
         const id: string = (len - 1).toString()
         const newVal: string = document.getElementById(id)!.innerText;
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
         tags.value.push("")
+        imageUrls.value[index] = currentImg.value;
+        currentImg.value = "";
     }
 }
 
@@ -39,14 +44,20 @@ function publishNote() {
     }
 }
 
+
+
 function handleDrop(e: DragEvent) {
     e.preventDefault()
-
-    console.log(e.dataTransfer)
-    if (e.dataTransfer?.files.length != 0) {
+    console.log('event', e)
+    // console.log('target', e.target!.id.substring(3))
+    // console.log(e.dataTransfer)
+    if (e.dataTransfer?.files.length != 0 && e.target!.id.substring(3)) {
         const file = e.dataTransfer?.files[0]
         if (file?.type.startsWith("image/")) {
-            console.log(file.type)
+            const blobData = file.slice(0, file.size, file.type);
+            b.value = new Blob([blobData])
+            // console.log(file)
+            currentImg.value = URL.createObjectURL(b.value);
 
             /* 
                 push image to cloud storage images
@@ -60,12 +71,14 @@ function handleDrop(e: DragEvent) {
 </script>
 
 <template>
-    <div id="box" v-for="(i, index) in notes" @dragover.prevent @drop="handleDrop">
+    <div v-for="(i, index) in notes" :id="'box' + index" :key="index" @dragover.prevent @drop="handleDrop">
         <div class="pt"></div>
         <button v-if="!editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
         <button v-if="editing && index < notes.length - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
+        <img v-if="imageUrls[index] !== '' && index < notes.length - 1" id="importImg" :src="imageUrls[index]" />
+        <img v-if="currentImg !== '' && index === notes.length - 1" :src="currentImg" id="importImg" />
         <p :id="index.toString()" class="block" :contenteditable="editing || notes.length - 1 == index"
-            @keyup.enter="enterEvent">
+            @keyup.enter="enterEvent(index)">
             {{ i }}
         </p>
         <span class="right" id="position">
@@ -120,13 +133,20 @@ p {
     padding-top: .66em;
 }
 
+#importImg {
+    min-width: 30vh;
+    max-width: 30vh;
+    padding-top: 1.33em;
+    max-height: 50vh;
+}
+
 #tagsInput {
     width: 80%;
     background-color: rgb(229, 236, 250);
     margin-left: 1em;
 }
 
-#box {
+[id^="box"] {
     position: relative;
     min-height: 5vh;
     word-wrap: break-word;
