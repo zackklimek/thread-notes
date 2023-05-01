@@ -9,4 +9,11 @@ import Thread from './components/Thread.vue';
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.fixed {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+</style>
