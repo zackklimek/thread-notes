@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, Ref, computed } from "vue";
+import { ref, Ref } from "vue";
 
 const notes = ref(['']);
-const reverseItems = computed(() => notes.value.reverse())
 const editing: Ref<boolean> = ref(false);
 
 function toggleEdit(i: number) {
@@ -14,20 +13,21 @@ function toggleEdit(i: number) {
 }
 
 function enterEvent() {
-    editing.value = false;
-    const id: string = (notes.value.length - 1).toString()
-    const newVal: string = document.getElementById(id)!.innerText;
-    // items.value.push(newVal);
-    notes.value = [...notes.value, newVal] // Look into cost of spread operator
-    // document.getElementById(id)!.innerText = "";
-    console.log('new value', notes.value)
+    if (editing.value === false) {
+        const len: number = notes.value.length;
+        const id: string = (len - 1).toString()
+        const newVal: string = document.getElementById(id)!.innerText;
+        notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
+        console.log('new value', notes.value)
+        resetText(id)
+    }
 }
 
-// const v = ref('v')
+function resetText(id: string) {
+    console.log('reset text', notes.value)
+    document.getElementById(id)!.innerText = "";
 
-// onMounted(() => {
-//     notes.value.reverse();
-// })
+}
 
 
 </script>
@@ -64,8 +64,6 @@ p {
 }
 
 #box {
-    /* outline: solid 2px grey; */
-    /* border-radius: .33em; */
     min-height: 5vh;
     word-wrap: break-word;
     min-width: 40vw;
@@ -79,11 +77,8 @@ p {
     margin: 1.66em;
     box-shadow: 2px 2px 6px rgba(47, 72, 255, 0.719), -2px -2px 6px rgba(47, 72, 255, 0.719),
         2px -2px 4px rgba(47, 72, 255, 0.719), -2px 2px 4px rgba(47, 72, 255, 0.719);
-
-    /* filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.3)); */
     transition: 0.3s;
     border-radius: 5px;
-    /* 5px rounded corners */
 }
 
 #position {
