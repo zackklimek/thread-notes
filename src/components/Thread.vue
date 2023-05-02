@@ -12,6 +12,14 @@ const tags: Ref<string[]> = ref(['']);
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
+const cardClass = computed(() => {
+    if (over.value) {
+        return "block hoverClick"
+    }
+    else {
+        return "block";
+    }
+})
 let len = computed(() => { return notes.value.length });
 
 const currentBlob: Ref<undefined | Blob> = ref(undefined);
@@ -53,6 +61,7 @@ function enterEvent(index: number) {
         const len: number = notes.value.length;
         const id: string = (len - 1).toString()
         const newVal: string = document.getElementById('txt' + id)!.innerText;
+        document.getElementById('txt' + id)!.innerText = "";
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
         tags.value.push("")
         urls.value.push("");
@@ -60,6 +69,7 @@ function enterEvent(index: number) {
         imageBlobs.value[index] = currentBlob.value;
         currentImg.value = "";
         currentBlob.value = undefined;
+        document.getElementById('txt' + id)!.innerText = newVal;
     }
 }
 
@@ -96,7 +106,6 @@ function publishNote() {
 
             if (obj.blob) {
                 postWithImg(obj)
-                console.log('has image')
             }
             else {
                 postWithoutImg(obj)
@@ -107,10 +116,8 @@ function publishNote() {
 
 function handleDrop(e: DragEvent) {
     e.preventDefault();
-    console.log('event', e);
     if (e.dataTransfer?.files.length != 0 && e.target!.id.substring(3)) {
         const i = parseInt(e.target!.id.substring(3));
-        console.log(i, len.value)
         const file = e.dataTransfer?.files[0]
         if (file?.type.startsWith("image/") && i === len.value - 1) {
             const blobData = file.slice(0, file.size, file.type);
@@ -126,13 +133,18 @@ function handleDrop(e: DragEvent) {
         }
     }
     else if (e.dataTransfer?.getData('text/plain')) {
+        e.preventDefault();
         const i = parseInt(e.target!.id.substring(3));
         urls.value[i] = e.dataTransfer?.getData('text/plain')
     }
 }
 
+function handleDrag(e: DragEvent) {
+    e.preventDefault();
+    down.value = true;
+}
+
 function getImageUrl(blob: Blob | undefined): string {
-    console.log('get url from blob')
     if (blob !== undefined) {
         return URL.createObjectURL(blob)
     }
@@ -152,12 +164,17 @@ onMounted(() => {
     focusText();
 })
 
+const over = ref(false);
+const down = ref(false);
+
+
 </script>
 
 <template>
     <Transition name="slide-fade">
         <div v-if="!published">
-            <div v-for="(i, index) in notes" :id="'box' + index" :key="index" @dragover.prevent @drop="handleDrop">
+            <div v-for="(i, index) in notes" :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
+                @drop="handleDrop" @mouseover="() => over = true" @mouseleave="() => over = false">
                 <div class="pt" />
                 <div class="horizBox">
                     <span class="titleBox">
@@ -256,7 +273,6 @@ onMounted(() => {
     margin-left: .5em;
 }
 
-
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.66s ease;
@@ -287,7 +303,6 @@ p {
     margin: .66em;
 }
 
-
 .boxBtn {
     margin-bottom: 0.66em;
 }
@@ -317,7 +332,6 @@ p {
     color: rgb(97, 125, 235);
 }
 
-
 .pt {
     padding-top: .66em;
 }
@@ -332,18 +346,18 @@ p {
 }
 
 #importImg:hover {
-    transform: scale(1.02);
+    transform: scale(1.01);
     box-shadow: 0 1px 3px rgba(47, 72, 255, 0.719);
 }
 
 #tagsInput {
-    background-color: rgb(229, 236, 250);
+    background-color: aliceblue;
     margin-left: 1em;
     font-family: "Raleway", sans-serif;
 }
 
 #urlsInput {
-    background-color: rgb(229, 236, 250);
+    background-color: aliceblue;
     margin-left: 1em;
     font-family: "Raleway", sans-serif;
 }
@@ -357,12 +371,16 @@ p {
     padding-right: .66em;
     padding-left: .66em;
     padding-top: 0px;
-    background-color: rgb(229, 236, 250);
+    background-color: aliceblue;
     color: black;
     margin: 1.33em;
     box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719);
     transition: 0.3s;
     border-radius: 5px;
+}
+
+.hoverClick {
+    background-color: rgb(229, 236, 250);
 }
 
 #position {
