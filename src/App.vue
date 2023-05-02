@@ -6,7 +6,7 @@ import { RouterLink } from 'vue-router';
   <div id="navbar">
     <RouterLink to="/"><a class="link">Compose Thread</a></RouterLink>
     <RouterLink to="/notes"><a class="link">View Notes</a></RouterLink>
-    <RouterLink to="/"><a class="link">Clustering?</a></RouterLink>
+    <RouterLink to="/"><a class="link">Mapping?</a></RouterLink>
   </div>
   <div class="fixed">
     <router-view />

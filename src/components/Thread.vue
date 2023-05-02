@@ -2,11 +2,12 @@
 import { ref, Ref, computed, onMounted, Transition } from "vue";
 import { useRouter } from 'vue-router';
 
+const threadName: Ref<string> = ref('')
 const titles: Ref<string[]> = ref(['']);
+const edits: Ref<boolean[]> = ref([false])
 const router = useRouter();
 const notes = ref(['']);
 const urls = ref([''])
-const editing: Ref<boolean> = ref(false);
 const published: Ref<boolean> = ref(false);
 const tags: Ref<string[]> = ref(['']);
 const splitTags = computed(() => {
@@ -27,18 +28,12 @@ const currentImg: Ref<string> = ref("");
 const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
 const initialDate: Ref<string> = ref("");
 
-type Note = {
-    text: string,
-    blob: Blob | undefined,
-    tags: string[][],
-    threadIndex: number,
-    threadId: string
-}
+
 
 function clear(): void {
     initialDate.value = new Date().toISOString();
     notes.value = [''];
-    editing.value = false;
+    edits.value = [false];
     tags.value = [''];
     currentBlob.value = undefined;
     currentImg.value = "";
@@ -49,15 +44,17 @@ function clear(): void {
 }
 
 function toggleEdit(i: number) {
-    if (editing.value === true) {
+    if (edits.value[i] === true) {
         const newVal: string = document.getElementById('txt' + i.toString())!.innerText
         notes.value[i] = newVal;
+        edits.value[i] = !edits.value[i]
+    } else {
+        edits.value[i] = !edits.value[i]
     }
-    editing.value = !editing.value;
 }
 
 function enterEvent(index: number) {
-    if (editing.value === false) {
+    if (edits.value[index] === false) {
         const len: number = notes.value.length;
         const id: string = (len - 1).toString()
         const newVal: string = document.getElementById('txt' + id)!.innerText;
@@ -65,6 +62,7 @@ function enterEvent(index: number) {
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
         tags.value.push("")
         urls.value.push("");
+        edits.value.push(false);
         titles.value.push("")
         imageBlobs.value[index] = currentBlob.value;
         currentImg.value = "";
@@ -73,23 +71,35 @@ function enterEvent(index: number) {
     }
 }
 
-function handleEnter() {
-    if (editing.value == true) {
-        editing.value = false;
+function handleEnter(e: KeyboardEvent) {
+    const i: number = parseInt(e.target!.id.substring(3))
+    if (edits.value[i] == true) {
+        edits.value[i] = false;
     }
 }
 
 function postWithImg(n: Note) {
-    console.log(n.text + " has an image")
+    console.log(n.text + " has an image", n)
 }
 
 function postWithoutImg(n: Note) {
     console.log(n.text + " does not have an image")
 }
 
+type Note = {
+    text: string,
+    blob: Blob | undefined,
+    tags: string[],
+    threadIndex: number,
+    threadId: string,
+    threadName: string,
+    title: string
+    url: string
+}
+
 function publishNote() {
-    published.value = true;
-    if (editing.value === false) {
+    if (!edits.value.includes(true)) {
+        published.value = true;
         if (notes.value[notes.value.length - 1] === "")
             notes.value.pop();
         if (notes.value.length != splitTags.value.length)
@@ -99,9 +109,12 @@ function publishNote() {
             let obj = {
                 text: notes.value[i].trim(),
                 blob: imageBlobs.value[i],
-                tags: splitTags.value,
+                tags: splitTags.value[i],
                 threadIndex: i,
-                threadId: initialDate.value
+                threadId: initialDate.value,
+                threadName: threadName.value,
+                title: titles.value[i].trim(),
+                url: urls.value[i].trim()
             }
 
             if (obj.blob) {
@@ -111,6 +124,9 @@ function publishNote() {
                 postWithoutImg(obj)
             }
         }
+    }
+    else {
+        alert("You're still editing at least one note. Are you sure?")
     }
 }
 
@@ -123,12 +139,12 @@ function handleDrop(e: DragEvent) {
             const blobData = file.slice(0, file.size, file.type);
             currentBlob.value = new Blob([blobData])
             currentImg.value = URL.createObjectURL(currentBlob.value);
-            editing.value = false;
+            edits.value[i] = false;
         }
-        else if (editing && file?.type.startsWith("image/") && i != len.value - 1 && i < len.value) {
+        else if (edits.value[i] && file?.type.startsWith("image/") && i != len.value - 1 && i < len.value) {
             const blobData = file.slice(0, file.size, file.type);
             imageBlobs.value[i] = blobData;
-            editing.value = false;
+            edits.value[i] = false;
 
         }
     }
@@ -167,62 +183,114 @@ onMounted(() => {
 const over = ref(false);
 const down = ref(false);
 
+const titleClick = ref(false);
+
+function titleEnter() {
+    titleClick.value = false;
+}
+
+function isVideo(index: number) {
+    if (urls.value[index].startsWith("https://www.youtube")) {
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+function getEmbeddedVideo(index: number) {
+    if (urls.value[index].startsWith("https://www.youtube")) {
+        return 'https://www.youtube.com/embed/' + urls.value[index].split('v=')[1];
+    }
+    else {
+        return "";
+    }
+}
 
 </script>
 
 <template>
+    <div class="horizBox header">
+        <h4 v-if="threadName === '' && !titleClick" class="headerText" @click="() => titleClick = true">[ THREAD NAME ]
+        </h4>
+        <h4 v-if="threadName !== '' && !titleClick" class="headerText" @click="() => titleClick = true"> [ {{
+            threadName }} ]</h4>
+        <input id="titleInput" v-model="threadName" placeholder="Name your thread." v-if="titleClick"
+            @keyup.enter="titleEnter" />
+
+        <h4 class="headerText"> {{ new Date(initialDate).toLocaleString('en-us') }}</h4>
+    </div>
+    <!-- Need to break this into more modular components -->
     <Transition name="slide-fade">
         <div v-if="!published">
-            <div v-for="(i, index) in notes" :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
+            <div v-for="(i, index) in   notes  " :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
                 @drop="handleDrop" @mouseover="() => over = true" @mouseleave="() => over = false">
                 <div class="pt" />
                 <div class="horizBox">
                     <span class="titleBox">
                         <Transition name="slide-fade">
-                            <h5 v-if="titles[index] !== '' && !editing" class="title">{{ titles[index] }}
-                            </h5>
+                            <h4 v-if="titles[index] !== '' && !edits[index]" class="title">{{ titles[index] }}
+                            </h4>
                         </Transition>
                         <Transition name="fade">
-                            <input v-if="editing && index != (len - 1)" id="titleInput" v-model="titles[index]"
-                                placeholder="Add a title" @keyup.enter="handleEnter" />
+                            <input :id="'tle' + index.toString()" v-if="edits[index] && index != (len - 1)"
+                                class="cardInput" v-model="titles[index]" placeholder="Add a title"
+                                @keyup.enter="handleEnter" />
                         </Transition>
                     </span>
-                    <button v-if="!editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
-                    <button v-if="editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
+                    <button v-if="!edits[index] && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
+                    <button v-if="edits[index] && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
                 </div>
+                <Transition name="slide-fade">
+                    <iframe v-if="isVideo(index)" :src="getEmbeddedVideo(index)">
+
+                    </iframe>
+                </Transition>
                 <Transition name="slide-fade">
                     <img v-if="getImageUrl(imageBlobs[index]) !== '' && index < len - 1" id="importImg"
                         :src="getImageUrl(imageBlobs[index])" />
                 </Transition>
-                <Transition name="slide-fade"><img v-if="currentImg !== '' && index === len - 1" :src="currentImg"
-                        id="importImg" />
+                <Transition name="slide-fade">
+                    <img v-if="currentImg !== '' && index === len - 1" :src="currentImg" id="importImg" />
                 </Transition>
-                <p :id="'txt' + index.toString()" class="block" :contenteditable="editing || len - 1 == index"
+                <p :id="'txt' + index.toString()" class="block txtHover" :contenteditable="edits[index] || len - 1 == index"
                     @keyup.enter="enterEvent(index)">
-                    <Transition name="slide-fade">{{ i }}</Transition>
+                    <Transition name="slide-fade">
+                        {{ i }}
+                    </Transition>
                 </p>
-                <h5 v-if="!editing && urls[index] !== '' && titles[index] !== ''"><a :href="urls[index]">{{ titles[index]
-                }}</a></h5>
-                <h5 v-if="!editing && urls[index] !== '' && titles[index] === ''"><a :href="urls[index]">Source</a></h5>
+                <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">
+                    <a :href="urls[index]" target="_blank"> {{ titles[index] }}</a>
+                </h5>
+                <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] === ''">
+                    <a :href="urls[index]">Source</a>
+                </h5>
                 <span class="right" id="position">
                     <span id="position"> {{ index + 1 }} / {{ len }}</span>
                 </span>
-                <br v-if="editing || tags[index] != null" />
+                <br v-if="edits[index] || tags[index] != null" />
                 <Transition name="fade">
                     <div>
-                        <div v-if="index == len - 1 || editing" class="horizBox">
-                            <p class="footerText">Tags:</p>
-                            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleEnter" />
-                        </div>
-                        <div v-if="index != len - 1 && editing" class="horizBox">
-                            <span class="footerText">Url:</span>
-                            <input id="urlsInput" v-model="urls[index]" @keyup.enter="handleEnter" />
-                        </div>
+                        <Transition name="fade">
+                            <div v-if="index == len - 1 || edits[index]" class="horizBox">
+                                <p class="footerText">Tags:</p>
+                                <input :id="'tag' + index.toString()" v-model="tags[index]" class="cardInput"
+                                    @keyup.enter="handleEnter" />
+                            </div>
+                        </Transition>
+                        <Transition name="fade">
+                            <div v-if="index != len - 1 && edits[index]" class="horizBox">
+                                <span class="footerText">Url:</span>
+                                <input class="cardInput" v-model="urls[index]" @keyup.enter="handleEnter" />
+                            </div>
+                        </Transition>
                     </div>
                 </Transition>
-                <span v-if="!editing && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
-                    v-for="t in splitTags[index]" class="tagText footerText footer">
-                    #{{ t }}
+                <span class="parent-container">
+                    <span v-if="!edits[index] && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
+                        v-for="  t   in   splitTags[index]  " class="tagText footerText">
+                        #{{ t }}
+                    </span>
                 </span>
                 <div class="pt" />
             </div>
@@ -240,12 +308,36 @@ const down = ref(false);
 </template>
 
 <style scoped>
+iframe {
+    max-width: 80%;
+}
+
+.header {
+    width: 90%;
+}
+
+#titleInput {
+    background-color: black;
+    color: white;
+    font-size: 1.03em;
+    font-family: Helvetica, Arial, sans-serif
+}
+
+.headerText {
+    font-family: Helvetica, Arial, sans-serif;
+}
+
+.parent-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
 .horizBox {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-content: center;
-
+    margin-bottom: .5em;
 }
 
 .titleBox {
@@ -260,17 +352,6 @@ const down = ref(false);
     padding-top: 0;
     min-height: 0;
     margin: 0;
-}
-
-#titleInput {
-    max-width: 66%;
-    min-width: 15%;
-    width: auto;
-    background-color: aliceblue;
-    max-height: 2.33vh;
-    color: black;
-    border-radius: 3px;
-    margin-left: .5em;
 }
 
 .fade-enter-active,
@@ -309,27 +390,23 @@ p {
 
 .publishedBtn {
     margin: .66em;
-    font-family: "Raleway", Helvetica, sans-serif;
+    font-family: "Raleway", Helvetica, Arial, sans-serif;
 }
 
 .tagText {
-    color: rgb(15, 59, 233);
+    color: rgb(0, 17, 127);
     padding-right: 1em;
     transition: 0.13s;
 }
 
 .footerText {
-    font-size: .8em;
+    font-size: .75em;
     margin: 0;
-}
-
-.footer {
-    margin-bottom: 0.5em;
-    margin-top: 0.33em;
 }
 
 .tagText:hover {
     color: rgb(97, 125, 235);
+    transform: scale(1.02);
 }
 
 .pt {
@@ -346,20 +423,29 @@ p {
 }
 
 #importImg:hover {
-    transform: scale(1.01);
+    transform: scale(1.02);
     box-shadow: 0 1px 3px rgba(47, 72, 255, 0.719);
 }
 
-#tagsInput {
+[id^="tags"] {
     background-color: aliceblue;
     margin-left: 1em;
     font-family: "Raleway", sans-serif;
 }
 
-#urlsInput {
+.cardInput {
     background-color: aliceblue;
-    margin-left: 1em;
     font-family: "Raleway", sans-serif;
+    border-radius: .3em;
+    padding-left: .66em;
+    font-size: .8em;
+    width: 50%;
+    max-height: 2em;
+}
+
+[id^="txt"]:hover {
+    background-color: aliceblue;
+    box-shadow: inset;
 }
 
 [id^="box"] {
@@ -377,6 +463,7 @@ p {
     box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719);
     transition: 0.3s;
     border-radius: 5px;
+    margin-left: .66em;
 }
 
 .hoverClick {
