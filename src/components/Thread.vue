@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, Ref, computed, onMounted } from "vue";
+import { ref, Ref, computed, onMounted, Transition } from "vue";
+import { useRouter } from 'vue-router';
 
+const titles: Ref<string[]> = ref(['']);
+const router = useRouter();
 const notes = ref(['']);
+const urls = ref([''])
 const editing: Ref<boolean> = ref(false);
-const tags: Ref<string[]> = ref([""]);
+const published: Ref<boolean> = ref(false);
+const tags: Ref<string[]> = ref(['']);
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
@@ -13,6 +18,27 @@ const currentBlob: Ref<undefined | Blob> = ref(undefined);
 const currentImg: Ref<string> = ref("");
 const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
 const initialDate: Ref<string> = ref("");
+
+type Note = {
+    text: string,
+    blob: Blob | undefined,
+    tags: string[][],
+    threadIndex: number,
+    threadId: string
+}
+
+function clear(): void {
+    initialDate.value = new Date().toISOString();
+    notes.value = [''];
+    editing.value = false;
+    tags.value = [''];
+    currentBlob.value = undefined;
+    currentImg.value = "";
+    imageBlobs.value = [undefined];
+    published.value = false;
+    titles.value = [''];
+    urls.value = ['']
+}
 
 function toggleEdit(i: number) {
     if (editing.value === true) {
@@ -29,46 +55,55 @@ function enterEvent(index: number) {
         const newVal: string = document.getElementById('txt' + id)!.innerText;
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
         tags.value.push("")
+        urls.value.push("");
+        titles.value.push("")
         imageBlobs.value[index] = currentBlob.value;
         currentImg.value = "";
         currentBlob.value = undefined;
     }
 }
 
-function handleTagsEnter() {
+function handleEnter() {
     if (editing.value == true) {
         editing.value = false;
     }
 }
 
+function postWithImg(n: Note) {
+    console.log(n.text + " has an image")
+}
+
+function postWithoutImg(n: Note) {
+    console.log(n.text + " does not have an image")
+}
+
 function publishNote() {
+    published.value = true;
     if (editing.value === false) {
         if (notes.value[notes.value.length - 1] === "")
             notes.value.pop();
         if (notes.value.length != splitTags.value.length)
             splitTags.value.pop();
 
-        // console.log('split tags', splitTags.value)
-        // console.log('notes', notes.value)
-        // console.log('blobs', imageBlobs.value)
-
         for (let i = 0; i < notes.value.length; i++) {
             let obj = {
-                name: notes.value[i].trim(),
+                text: notes.value[i].trim(),
                 blob: imageBlobs.value[i],
-                tags: splitTags,
+                tags: splitTags.value,
                 threadIndex: i,
-                threadId: initialDate
+                threadId: initialDate.value
             }
 
-            console.log(obj)
-
+            if (obj.blob) {
+                postWithImg(obj)
+                console.log('has image')
+            }
+            else {
+                postWithoutImg(obj)
+            }
         }
-
     }
 }
-
-
 
 function handleDrop(e: DragEvent) {
     e.preventDefault();
@@ -83,7 +118,7 @@ function handleDrop(e: DragEvent) {
             currentImg.value = URL.createObjectURL(currentBlob.value);
             editing.value = false;
         }
-        else if (file?.type.startsWith("image/") && i != len.value - 1 && i < len.value) {
+        else if (editing && file?.type.startsWith("image/") && i != len.value - 1 && i < len.value) {
             const blobData = file.slice(0, file.size, file.type);
             imageBlobs.value[i] = blobData;
             editing.value = false;
@@ -91,10 +126,10 @@ function handleDrop(e: DragEvent) {
         }
     }
     else if (e.dataTransfer?.getData('text/plain')) {
-        console.log('link?', e.dataTransfer?.getData('text/plain'))
+        const i = parseInt(e.target!.id.substring(3));
+        urls.value[i] = e.dataTransfer?.getData('text/plain')
     }
 }
-
 
 function getImageUrl(blob: Blob | undefined): string {
     console.log('get url from blob')
@@ -104,51 +139,162 @@ function getImageUrl(blob: Blob | undefined): string {
     return "";
 }
 
+function toCollection(): void {
+    router.push({ path: "/notes" });
+}
+
+function focusText(): void {
+    document.getElementById("txt" + (len.value - 1).toString())?.focus();
+}
+
 onMounted(() => {
     initialDate.value = new Date().toISOString();
-    console.log('mounted', initialDate);
+    focusText();
 })
 
 </script>
 
 <template>
-    <div v-for="(i, index) in notes" :id="'box' + index" :key="index" @dragover.prevent @drop="handleDrop">
-        <div class="pt" />
-        <button v-if="!editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
-        <button v-if="editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
-        <img v-if="getImageUrl(imageBlobs[index]) !== '' && index < len - 1" id="importImg"
-            :src="getImageUrl(imageBlobs[index])" />
-        <img v-if="currentImg !== '' && index === len - 1" :src="currentImg" id="importImg" />
-        <p :id="'txt' + index.toString()" class="block" :contenteditable="editing || len - 1 == index"
-            @keyup.enter="enterEvent(index)">
-            {{ i }}
-        </p>
-        <span class="right" id="position">
-            <span id="position"> {{ index + 1 }} / {{ len }}</span>
-        </span>
-        <br v-if="editing || tags[index] != null" />
-        <div v-if="index == len - 1 || editing" class="footer">
-            <span class="footerText">Tags:</span>
-            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleTagsEnter" />
+    <Transition name="slide-fade">
+        <div v-if="!published">
+            <div v-for="(i, index) in notes" :id="'box' + index" :key="index" @dragover.prevent @drop="handleDrop">
+                <div class="pt" />
+                <div class="horizBox">
+                    <span class="titleBox">
+                        <Transition name="slide-fade">
+                            <h5 v-if="titles[index] !== '' && !editing" class="title">{{ titles[index] }}
+                            </h5>
+                        </Transition>
+                        <Transition name="fade">
+                            <input v-if="editing && index != (len - 1)" id="titleInput" v-model="titles[index]"
+                                placeholder="Add a title" @keyup.enter="handleEnter" />
+                        </Transition>
+                    </span>
+                    <button v-if="!editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Edit</button>
+                    <button v-if="editing && index < len - 1" class="boxBtn" @click="toggleEdit(index)">Save</button>
+                </div>
+                <Transition name="slide-fade">
+                    <img v-if="getImageUrl(imageBlobs[index]) !== '' && index < len - 1" id="importImg"
+                        :src="getImageUrl(imageBlobs[index])" />
+                </Transition>
+                <Transition name="slide-fade"><img v-if="currentImg !== '' && index === len - 1" :src="currentImg"
+                        id="importImg" />
+                </Transition>
+                <p :id="'txt' + index.toString()" class="block" :contenteditable="editing || len - 1 == index"
+                    @keyup.enter="enterEvent(index)">
+                    <Transition name="slide-fade">{{ i }}</Transition>
+                </p>
+                <h5 v-if="!editing && urls[index] !== '' && titles[index] !== ''"><a :href="urls[index]">{{ titles[index]
+                }}</a></h5>
+                <h5 v-if="!editing && urls[index] !== '' && titles[index] === ''"><a :href="urls[index]">Source</a></h5>
+                <span class="right" id="position">
+                    <span id="position"> {{ index + 1 }} / {{ len }}</span>
+                </span>
+                <br v-if="editing || tags[index] != null" />
+                <Transition name="fade">
+                    <div>
+                        <div v-if="index == len - 1 || editing" class="horizBox">
+                            <p class="footerText">Tags:</p>
+                            <input id="tagsInput" v-model="tags[index]" @keyup.enter="handleEnter" />
+                        </div>
+                        <div v-if="index != len - 1 && editing" class="horizBox">
+                            <span class="footerText">Url:</span>
+                            <input id="urlsInput" v-model="urls[index]" @keyup.enter="handleEnter" />
+                        </div>
+                    </div>
+                </Transition>
+                <span v-if="!editing && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
+                    v-for="t in splitTags[index]" class="tagText footerText footer">
+                    #{{ t }}
+                </span>
+                <div class="pt" />
+            </div>
+            <button v-if="len > 1" @click="publishNote">Publish</button>
         </div>
-        <span v-if="!editing && tags[index] != null && tags[index].length > 0 && index != tags.length - 1"
-            v-for="t in splitTags[index]" class="tagText footerText footer">
-            #{{ t }}
-        </span>
-        <div class="pt" />
-    </div>
-    <button v-if="len > 1" @click="publishNote">Publish</button>
+        <div v-else>
+            <h3>Published.</h3>
+            <p>Create a new thread?</p>
+            <span>
+                <button class="publishedBtn" @click="clear">Thread</button>
+                <button @click="toCollection" class="publishedBtn">Collection</button>
+            </span>
+        </div>
+    </Transition>
 </template>
 
 <style scoped>
-p {
-    padding-top: 6.33px;
-    min-height: 3.33vh;
+.horizBox {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-content: center;
+
 }
 
+.titleBox {
+    display: flex;
+    flex-direction: row;
+    align-content: left;
+    max-width: 80%;
+    justify-content: flex-start;
+}
+
+.title {
+    padding-top: 0;
+    min-height: 0;
+    margin: 0;
+}
+
+#titleInput {
+    max-width: 66%;
+    min-width: 15%;
+    width: auto;
+    background-color: aliceblue;
+    max-height: 2.33vh;
+    color: black;
+    border-radius: 3px;
+    margin-left: .5em;
+}
+
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.66s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.slide-fade-enter-active {
+    transition: all 0.33s ease-out;
+}
+
+.slide-fade-leave-active {
+    transition: all 0.33s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+    transform: translateX(20px);
+    opacity: 0;
+}
+
+p {
+    padding-top: 3.33px;
+    min-height: 3.33vh;
+    margin: .66em;
+}
+
+
 .boxBtn {
-    margin-left: 80%;
     margin-bottom: 0.66em;
+}
+
+.publishedBtn {
+    margin: .66em;
+    font-family: "Raleway", Helvetica, sans-serif;
 }
 
 .tagText {
@@ -159,7 +305,7 @@ p {
 
 .footerText {
     font-size: .8em;
-    width: 100vh;
+    margin: 0;
 }
 
 .footer {
@@ -191,7 +337,12 @@ p {
 }
 
 #tagsInput {
-    width: 70%;
+    background-color: rgb(229, 236, 250);
+    margin-left: 1em;
+    font-family: "Raleway", sans-serif;
+}
+
+#urlsInput {
     background-color: rgb(229, 236, 250);
     margin-left: 1em;
     font-family: "Raleway", sans-serif;

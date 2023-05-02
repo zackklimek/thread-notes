@@ -25,8 +25,13 @@ body {
 
 
 
-h1 {
+h1, h3 {
   font-family: Helvetica, sans-serif;
+}
+
+h5 { 
+  font-family: "Raleway", sans-serif;
+  margin: 0.33em;
 }
 
 button {
