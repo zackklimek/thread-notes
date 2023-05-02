@@ -1,8 +1,0 @@
-"filename", "language", "CSS", "TypeScript", "vue", "comment", "blank", "total"
-"/Users/zackklimek/CS/Vue3/thread-notes/src/App.vue", "vue", 0, 0, 27, 0, 5, 32
-"/Users/zackklimek/CS/Vue3/thread-notes/src/components/NoteGrid.vue", "vue", 0, 0, 15, 0, 6, 21
-"/Users/zackklimek/CS/Vue3/thread-notes/src/components/Thread.vue", "vue", 0, 0, 181, 0, 32, 213
-"/Users/zackklimek/CS/Vue3/thread-notes/src/main.ts", "TypeScript", 0, 12, 0, 0, 4, 16
-"/Users/zackklimek/CS/Vue3/thread-notes/src/style.css", "CSS", 54, 0, 0, 4, 13, 71
-"/Users/zackklimek/CS/Vue3/thread-notes/src/vite-env.d.ts", "TypeScript", 0, 0, 0, 1, 1, 2
-"Total", "-", 54, 12, 223, 5, 61, 355
