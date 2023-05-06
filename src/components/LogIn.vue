@@ -2,7 +2,6 @@
 
 import { ref, Ref } from "vue";
 import firebaseConfig from "../../firebaseConfig.ts";
-
 import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
 import { useRouter } from 'vue-router';
@@ -44,7 +43,6 @@ function logInHandler() {
         </div>
         <br />
         <button @click="logInHandler">Log In</button>
-
     </div>
 </template>
 

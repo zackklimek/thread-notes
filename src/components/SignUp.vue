@@ -43,7 +43,6 @@ function signUpHandler() {
         </div>
         <br />
         <button @click="signUpHandler">Sign Up</button>
-
     </div>
 </template>
 

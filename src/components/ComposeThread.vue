@@ -254,7 +254,6 @@ onMounted(() => {
             threadName }} ]</h4>
         <input id="titleInput" v-model="threadName" placeholder="Name your thread." v-if="titleClick"
             @keyup.enter="titleEnter" />
-
         <h4 class="headerText"> {{ new Date(initialDate).toLocaleString('en-us') }}</h4>
     </div>
     <!-- Need to break this into more modular components -->
@@ -386,30 +385,6 @@ iframe {
     padding-top: 0;
     min-height: 0;
     margin: 0;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.66s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
-}
-
-.slide-fade-enter-active {
-    transition: all 0.33s ease-out;
-}
-
-.slide-fade-leave-active {
-    transition: all 0.33s cubic-bezier(1, 0.5, 0.8, 1);
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-    transform: translateX(20px);
-    opacity: 0;
 }
 
 p {

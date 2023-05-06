@@ -22,7 +22,7 @@ onAuthStateChanged(auth, () => {
   <div id="navbar">
     <RouterLink to="/"><a class="link">Compose Thread</a></RouterLink>
     <RouterLink v-if="userEmail !== null" to="/notes"><a class="link">View Notes</a></RouterLink>
-    <RouterLink v-if="userEmail !== null" to="/"><a class="link">Mapping?</a></RouterLink>
+    <!-- <RouterLink v-if="userEmail !== null" to="/"><a class="link">Mapping?</a></RouterLink> -->
     <RouterLink v-if="userEmail === null" to="/signUp"><a class="link">Create an Account</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/logIn"><a class="link">Log In</a></RouterLink>
     <RouterLink v-if="userEmail !== null" @click="() => signOut(auth)" to="/"><a class="link">Sign
@@ -33,7 +33,8 @@ onAuthStateChanged(auth, () => {
     <router-view />
     <div>
       <h1 class="footerElement footerTitle">thread-notes</h1>
-      <h4 v-if="userEmail !== null" class="footerElement">{{ userEmail }} </h4>
+      <h4 v-if="userEmail !== null" class="footerElement">for <a class="text">{{ userEmail }}</a> </h4>
+      <p class="footerElement">v 0.6.0</p>
     </div>
   </div>
 </template>
@@ -45,6 +46,7 @@ onAuthStateChanged(auth, () => {
 
 .footerElement {
   margin: .3em;
+  font-family: Helvetica, Arial, sans-serif;
 }
 
 .fixed {
