@@ -3,17 +3,22 @@ import { ref, Ref, computed, onMounted, Transition } from "vue";
 import { useRouter } from 'vue-router';
 import { getAuth } from "firebase/auth";
 import { initializeApp } from "firebase/app";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, } from 'firebase/storage';
 import firebaseConfig from '../../firebaseConfig';
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore();
+const storage = getStorage(app);
+
 
 const threadName: Ref<string> = ref('')
 const titles: Ref<string[]> = ref(['']);
 const edits: Ref<boolean[]> = ref([false])
 const router = useRouter();
 const notes = ref(['']);
-const urls = ref([''])
+const urls = ref(['']);
 const published: Ref<boolean> = ref(false);
 const tags: Ref<string[]> = ref(['']);
 
@@ -27,7 +32,7 @@ const splitTags = computed(() => {
 });
 const cardClass = computed(() => {
     if (isHoveringOver.value) {
-        return "block hoverClick"
+        return "block hoverClick";
     }
     else {
         return "block";
@@ -37,7 +42,19 @@ let len = computed(() => { return notes.value.length });
 
 const isHoveringOver = ref(false);
 const isHoldingDown = ref(false);
+const titleClick = ref(false);
 
+type NoteInput = {
+    text: string,
+    blob: Blob | undefined,
+    tags: string[],
+    threadIndex: number,
+    threadId: string,
+    threadName: string,
+    title: string,
+    url: string,
+    noteId: string
+};
 
 function clear(): void {
     initialDate.value = new Date().toISOString();
@@ -55,25 +72,25 @@ function clear(): void {
 
 function toggleEdit(i: number) {
     if (edits.value[i] === true) {
-        const newVal: string = document.getElementById('txt' + i.toString())!.innerText
+        const newVal: string = document.getElementById('txt' + i.toString())!.innerText;
         notes.value[i] = newVal;
-        edits.value[i] = !edits.value[i]
+        edits.value[i] = !edits.value[i];
     } else {
-        edits.value[i] = !edits.value[i]
+        edits.value[i] = !edits.value[i];
     }
 }
 
 function enterEvent(index: number) {
     if (edits.value[index] === false) {
         const len: number = notes.value.length;
-        const id: string = (len - 1).toString()
+        const id: string = (len - 1).toString();
         const newVal: string = document.getElementById('txt' + id)!.innerText;
         document.getElementById('txt' + id)!.innerText = "";
-        notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]] // Look into cost of spread operator
-        tags.value.push("")
+        notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]];
+        tags.value.push("");
         urls.value.push("");
         edits.value.push(false);
-        titles.value.push("")
+        titles.value.push("");
         imageBlobs.value[index] = currentBlob.value;
         currentImg.value = "";
         currentBlob.value = undefined;
@@ -88,36 +105,51 @@ function handleEnter(e: KeyboardEvent) {
     }
 }
 
-function postWithImg(n: Note) {
-    console.log(n.text + " has an image", n)
+function postWithImg(n: NoteInput) {
+    if (auth.currentUser) {
+        const imagePath: string = "users/" + auth.currentUser.uid + "/notes/" + n.noteId;
+        const imageRef = sRef(storage, imagePath);
+        if (n.blob !== undefined) {
+            const noteImageBlob: Blob = n.blob;
+            delete n.blob;
+            const uploadTask = uploadBytesResumable(imageRef, noteImageBlob)
+            uploadTask.on("state_changed",
+                () => { },
+                () => { alert("Error: Unsuccessful image upload.") },
+                () => {
+                    getDownloadURL(uploadTask.snapshot.ref).then((imageUrl) => {
+                        const imageNote = {
+                            ...n,
+                            imageUrl: imageUrl
+                        };
+                        const userNotesRef = doc(db, "users", auth.currentUser!.uid, "notes", n.noteId);
+                        setDoc(userNotesRef, imageNote);
+                    })
+                })
+        }
+    }
 }
 
-function postWithoutImg(n: Note) {
-    console.log(n.text + " does not have an image")
-}
-
-type Note = {
-    text: string,
-    blob: Blob | undefined,
-    tags: string[],
-    threadIndex: number,
-    threadId: string,
-    threadName: string,
-    title: string
-    url: string
+function postWithoutImg(n: NoteInput) {
+    if (auth.currentUser !== null) {
+        const userNotesRef = doc(db, "users", auth.currentUser!.uid, "notes", n.noteId);
+        delete n.blob;
+        setDoc(userNotesRef, n);
+    }
 }
 
 function publishNote() {
     if (auth.currentUser != null) {
         if (!edits.value.includes(true)) {
             published.value = true;
+
             if (notes.value[notes.value.length - 1] === "")
                 notes.value.pop();
             if (notes.value.length != splitTags.value.length)
                 splitTags.value.pop();
 
             for (let i = 0; i < notes.value.length; i++) {
-                let obj = {
+                let obj: NoteInput = {
                     text: notes.value[i].trim(),
                     blob: imageBlobs.value[i],
                     tags: splitTags.value[i],
@@ -125,23 +157,18 @@ function publishNote() {
                     threadId: initialDate.value,
                     threadName: threadName.value,
                     title: titles.value[i].trim(),
-                    url: urls.value[i].trim()
-                }
-
-                if (obj.blob) {
-                    postWithImg(obj)
-                }
-                else {
-                    postWithoutImg(obj)
-                }
+                    url: urls.value[i].trim(),
+                    noteId: i + "_" + initialDate.value
+                };
+                obj.blob ? postWithImg(obj) : postWithoutImg(obj);
             }
         }
         else {
-            alert("You're still editing at least one note. Are you sure?")
+            alert("You're still editing at least one note. Are you sure?");
         }
     }
     else {
-        alert("Please sign in first.")
+        alert("Please sign in first.");
     }
 }
 
@@ -149,10 +176,10 @@ function handleDrop(e: DragEvent) {
     e.preventDefault();
     if (e.dataTransfer?.files.length != 0 && e.target!.id.substring(3)) {
         const i = parseInt(e.target!.id.substring(3));
-        const file = e.dataTransfer?.files[0]
+        const file = e.dataTransfer?.files[0];
         if (file?.type.startsWith("image/") && i === len.value - 1) {
             const blobData = file.slice(0, file.size, file.type);
-            currentBlob.value = new Blob([blobData])
+            currentBlob.value = new Blob([blobData], { type: file!.type });
             currentImg.value = URL.createObjectURL(currentBlob.value);
             edits.value[i] = false;
         }
@@ -166,7 +193,7 @@ function handleDrop(e: DragEvent) {
     else if (e.dataTransfer?.getData('text/plain')) {
         e.preventDefault();
         const i = parseInt(e.target!.id.substring(3));
-        urls.value[i] = e.dataTransfer?.getData('text/plain')
+        urls.value[i] = e.dataTransfer?.getData('text/plain');
     }
 }
 
@@ -177,7 +204,7 @@ function handleDrag(e: DragEvent) {
 
 function getImageUrl(blob: Blob | undefined): string {
     if (blob !== undefined) {
-        return URL.createObjectURL(blob)
+        return URL.createObjectURL(blob);
     }
     return "";
 }
@@ -189,15 +216,6 @@ function toCollection(): void {
 function focusText(): void {
     document.getElementById("txt" + (len.value - 1).toString())?.focus();
 }
-
-onMounted(() => {
-    initialDate.value = new Date().toISOString();
-    focusText();
-})
-
-
-
-const titleClick = ref(false);
 
 function titleEnter() {
     titleClick.value = false;
@@ -220,6 +238,11 @@ function getEmbeddedVideo(index: number) {
         return "";
     }
 }
+
+onMounted(() => {
+    initialDate.value = new Date().toISOString();
+    focusText();
+})
 
 </script>
 
