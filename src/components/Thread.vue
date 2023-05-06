@@ -10,6 +10,7 @@ const notes = ref(['']);
 const urls = ref([''])
 const published: Ref<boolean> = ref(false);
 const tags: Ref<string[]> = ref(['']);
+const time = computed(() => { return new Date().toLocaleString("en-us") })
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
@@ -464,6 +465,10 @@ p {
     transition: 0.3s;
     border-radius: 5px;
     margin-left: .66em;
+}
+
+[id^="box"]:hover {
+    transform: scale(1.015);
 }
 
 .hoverClick {
