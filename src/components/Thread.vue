@@ -10,12 +10,11 @@ const notes = ref(['']);
 const urls = ref([''])
 const published: Ref<boolean> = ref(false);
 const tags: Ref<string[]> = ref(['']);
-const time = computed(() => { return new Date().toLocaleString("en-us") })
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
 const cardClass = computed(() => {
-    if (over.value) {
+    if (isHoveringOver.value) {
         return "block hoverClick"
     }
     else {
@@ -29,6 +28,8 @@ const currentImg: Ref<string> = ref("");
 const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
 const initialDate: Ref<string> = ref("");
 
+const isHoveringOver = ref(false);
+const isHoldingDown = ref(false);
 
 
 function clear(): void {
@@ -42,6 +43,7 @@ function clear(): void {
     published.value = false;
     titles.value = [''];
     urls.value = ['']
+    threadName.value = '';
 }
 
 function toggleEdit(i: number) {
@@ -158,7 +160,7 @@ function handleDrop(e: DragEvent) {
 
 function handleDrag(e: DragEvent) {
     e.preventDefault();
-    down.value = true;
+    isHoldingDown.value = true;
 }
 
 function getImageUrl(blob: Blob | undefined): string {
@@ -181,8 +183,7 @@ onMounted(() => {
     focusText();
 })
 
-const over = ref(false);
-const down = ref(false);
+
 
 const titleClick = ref(false);
 
@@ -225,7 +226,7 @@ function getEmbeddedVideo(index: number) {
     <Transition name="slide-fade">
         <div v-if="!published">
             <div v-for="(i, index) in   notes  " :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
-                @drop="handleDrop" @mouseover="() => over = true" @mouseleave="() => over = false">
+                @drop="handleDrop" @mouseover="() => isHoveringOver = true" @mouseleave="() => isHoveringOver = false">
                 <div class="pt" />
                 <div class="horizBox">
                     <span class="titleBox">
@@ -436,6 +437,7 @@ p {
 
 .cardInput {
     background-color: aliceblue;
+    color: black;
     font-family: "Raleway", sans-serif;
     border-radius: .3em;
     padding-left: .66em;

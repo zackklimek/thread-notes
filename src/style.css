@@ -37,7 +37,9 @@ button {
   color: black;
   font-family: 'Raleway', Helvetica, Arial,sans-serif;
   border-radius: 5px;
+  padding: 0.33em;
   max-height: auto;
+  cursor: pointer;
 }
 
 #app {
@@ -47,13 +49,6 @@ button {
   text-align: center;      
 }
 
-button {
-  font-family: "Raleway", serif;
-  /* padding-top: 0.33em; */
-  /* padding-bottom: 0.33em; */
-  padding: 0.33em;
-  background-color: aliceblue;
-}
 
 @media (prefers-color-scheme: light) {
   a:hover {
@@ -69,5 +64,5 @@ button {
   margin: 2em;
 }
 
-link:hover{ color: white
+link:hover{ color: #747bff;
 }
