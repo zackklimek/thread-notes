@@ -16,10 +16,7 @@ const loginInput: Ref<string> = ref("");
 const passInput: Ref<string> = ref("");
 
 function signUpHandler() {
-    console.log(firebaseConfig)
     if (loginInput.value.length > 0 && passInput.value.length >= 8 && loginInput.value.includes('@')) {
-        console.log(loginInput, passInput)
-        console.log(loginInput.value, passInput.value)
         createUserWithEmailAndPassword(auth, loginInput.value, passInput.value)
             .then(() => {
                 loginInput.value = "";

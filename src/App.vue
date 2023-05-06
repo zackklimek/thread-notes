@@ -9,8 +9,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const userEmail: Ref<string | null> = ref(null);
 
-onAuthStateChanged(auth, (user) => {
-  console.log(user);
+onAuthStateChanged(auth, () => {
   if (auth.currentUser)
     userEmail.value = auth.currentUser?.email;
   else
@@ -32,11 +31,22 @@ onAuthStateChanged(auth, (user) => {
   </div>
   <div class="fixed">
     <router-view />
-    <h1>thread-notes</h1>
+    <div>
+      <h1 class="footerElement footerTitle">thread-notes</h1>
+      <h4 v-if="userEmail !== null" class="footerElement">{{ userEmail }} </h4>
+    </div>
   </div>
 </template>
 
 <style scoped>
+.footerTitle {
+  padding-top: 1em;
+}
+
+.footerElement {
+  margin: .3em;
+}
+
 .fixed {
   display: flex;
   flex-direction: column;
