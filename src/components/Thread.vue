@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { ref, Ref, computed, onMounted, Transition } from "vue";
 import { useRouter } from 'vue-router';
+import { getAuth } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import firebaseConfig from '../../firebaseConfig';
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 
 const threadName: Ref<string> = ref('')
 const titles: Ref<string[]> = ref(['']);
@@ -10,11 +16,17 @@ const notes = ref(['']);
 const urls = ref([''])
 const published: Ref<boolean> = ref(false);
 const tags: Ref<string[]> = ref(['']);
+
+const currentBlob: Ref<undefined | Blob> = ref(undefined);
+const currentImg: Ref<string> = ref("");
+const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
+const initialDate: Ref<string> = ref("");
+
 const splitTags = computed(() => {
     return tags.value.map((t) => t.trim().split(" "))
 });
 const cardClass = computed(() => {
-    if (over.value) {
+    if (isHoveringOver.value) {
         return "block hoverClick"
     }
     else {
@@ -23,11 +35,8 @@ const cardClass = computed(() => {
 })
 let len = computed(() => { return notes.value.length });
 
-const currentBlob: Ref<undefined | Blob> = ref(undefined);
-const currentImg: Ref<string> = ref("");
-const imageBlobs: Ref<(Blob | undefined)[]> = ref([undefined])
-const initialDate: Ref<string> = ref("");
-
+const isHoveringOver = ref(false);
+const isHoldingDown = ref(false);
 
 
 function clear(): void {
@@ -40,7 +49,8 @@ function clear(): void {
     imageBlobs.value = [undefined];
     published.value = false;
     titles.value = [''];
-    urls.value = ['']
+    urls.value = [''];
+    threadName.value = '';
 }
 
 function toggleEdit(i: number) {
@@ -98,35 +108,40 @@ type Note = {
 }
 
 function publishNote() {
-    if (!edits.value.includes(true)) {
-        published.value = true;
-        if (notes.value[notes.value.length - 1] === "")
-            notes.value.pop();
-        if (notes.value.length != splitTags.value.length)
-            splitTags.value.pop();
+    if (auth.currentUser != null) {
+        if (!edits.value.includes(true)) {
+            published.value = true;
+            if (notes.value[notes.value.length - 1] === "")
+                notes.value.pop();
+            if (notes.value.length != splitTags.value.length)
+                splitTags.value.pop();
 
-        for (let i = 0; i < notes.value.length; i++) {
-            let obj = {
-                text: notes.value[i].trim(),
-                blob: imageBlobs.value[i],
-                tags: splitTags.value[i],
-                threadIndex: i,
-                threadId: initialDate.value,
-                threadName: threadName.value,
-                title: titles.value[i].trim(),
-                url: urls.value[i].trim()
-            }
+            for (let i = 0; i < notes.value.length; i++) {
+                let obj = {
+                    text: notes.value[i].trim(),
+                    blob: imageBlobs.value[i],
+                    tags: splitTags.value[i],
+                    threadIndex: i,
+                    threadId: initialDate.value,
+                    threadName: threadName.value,
+                    title: titles.value[i].trim(),
+                    url: urls.value[i].trim()
+                }
 
-            if (obj.blob) {
-                postWithImg(obj)
+                if (obj.blob) {
+                    postWithImg(obj)
+                }
+                else {
+                    postWithoutImg(obj)
+                }
             }
-            else {
-                postWithoutImg(obj)
-            }
+        }
+        else {
+            alert("You're still editing at least one note. Are you sure?")
         }
     }
     else {
-        alert("You're still editing at least one note. Are you sure?")
+        alert("Please sign in first.")
     }
 }
 
@@ -157,7 +172,7 @@ function handleDrop(e: DragEvent) {
 
 function handleDrag(e: DragEvent) {
     e.preventDefault();
-    down.value = true;
+    isHoldingDown.value = true;
 }
 
 function getImageUrl(blob: Blob | undefined): string {
@@ -180,8 +195,7 @@ onMounted(() => {
     focusText();
 })
 
-const over = ref(false);
-const down = ref(false);
+
 
 const titleClick = ref(false);
 
@@ -224,13 +238,12 @@ function getEmbeddedVideo(index: number) {
     <Transition name="slide-fade">
         <div v-if="!published">
             <div v-for="(i, index) in   notes  " :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
-                @drop="handleDrop" @mouseover="() => over = true" @mouseleave="() => over = false">
+                @drop="handleDrop" @mouseover="() => isHoveringOver = true" @mouseleave="() => isHoveringOver = false">
                 <div class="pt" />
                 <div class="horizBox">
                     <span class="titleBox">
                         <Transition name="slide-fade">
-                            <h4 v-if="titles[index] !== '' && !edits[index]" class="title">{{ titles[index] }}
-                            </h4>
+                            <h4 v-if="titles[index] !== '' && !edits[index]" class="title">{{ titles[index] }}</h4>
                         </Transition>
                         <Transition name="fade">
                             <input :id="'tle' + index.toString()" v-if="edits[index] && index != (len - 1)"
@@ -255,9 +268,7 @@ function getEmbeddedVideo(index: number) {
                 </Transition>
                 <p :id="'txt' + index.toString()" class="block txtHover" :contenteditable="edits[index] || len - 1 == index"
                     @keyup.enter="enterEvent(index)">
-                    <Transition name="slide-fade">
-                        {{ i }}
-                    </Transition>
+                    <Transition name="slide-fade">{{ i }}</Transition>
                 </p>
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">
                     <a :href="urls[index]" target="_blank"> {{ titles[index] }}</a>
@@ -265,9 +276,6 @@ function getEmbeddedVideo(index: number) {
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] === ''">
                     <a :href="urls[index]">Source</a>
                 </h5>
-                <span class="right" id="position">
-                    <span id="position"> {{ index + 1 }} / {{ len }}</span>
-                </span>
                 <br v-if="edits[index] || tags[index] != null" />
                 <Transition name="fade">
                     <div>
@@ -292,7 +300,10 @@ function getEmbeddedVideo(index: number) {
                         #{{ t }}
                     </span>
                 </span>
-                <div class="pt" />
+                <span class="right" id="position">
+                    {{ index + 1 }} / {{ len }}
+                </span>
+                <div class="pt"></div>
             </div>
             <button v-if="len > 1" @click="publishNote">Publish</button>
         </div>
@@ -435,6 +446,7 @@ p {
 
 .cardInput {
     background-color: aliceblue;
+    color: black;
     font-family: "Raleway", sans-serif;
     border-radius: .3em;
     padding-left: .66em;
@@ -464,6 +476,10 @@ p {
     transition: 0.3s;
     border-radius: 5px;
     margin-left: .66em;
+}
+
+[id^="box"]:hover {
+    transform: scale(1.015);
 }
 
 .hoverClick {
