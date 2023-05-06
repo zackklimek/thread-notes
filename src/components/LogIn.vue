@@ -3,7 +3,7 @@
 import { ref, Ref } from "vue";
 import firebaseConfig from "../../firebaseConfig.ts";
 
-import { createUserWithEmailAndPassword, getAuth, UserCredential } from "firebase/auth";
+import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
 import { useRouter } from 'vue-router';
 
@@ -15,37 +15,35 @@ const router = useRouter();
 const loginInput: Ref<string> = ref("");
 const passInput: Ref<string> = ref("");
 
-function signUpHandler() {
-    console.log(firebaseConfig)
-    if (loginInput.value.length > 0 && passInput.value.length >= 8 && loginInput.value.includes('@')) {
-        console.log(loginInput, passInput)
-        console.log(loginInput.value, passInput.value)
-        createUserWithEmailAndPassword(auth, loginInput.value, passInput.value)
-            .then(() => {
-                loginInput.value = "";
+function logInHandler() {
+    signInWithEmailAndPassword(auth, loginInput.value, passInput.value)
+        .then(() => {
+            alert("Welcome back");
+            loginInput.value = "";
+            passInput.value = "";
+            router.push({ path: "/" })
+        })
+        .catch((error: any) => {
+            if (error.code === 'auth/wrong-password') {
+                alert("Incorrect password")
                 passInput.value = "";
-                router.push({ path: "/" })
-            })
-    }
-    else if (passInput.value.length < 8) {
-        passInput.value = "";
-        alert("Password must be at least 8 characters.")
-    }
+            }
+            console.log(error)
+        })
 }
 
 </script>
 
 <template>
-    <h3>Sign Up</h3>
+    <h3>Log In</h3>
     <div class="card">
-        <h4 class="text">Create an account.</h4>
+        <h4 class="text">Log in to your account.</h4>
         <div class="column">
             <input placeholder="Email" v-model="loginInput" />
             <input placeholder="Password" type="password" v-model="passInput" />
-            <p class="p-text">Password must be <br>at least 8 characters.</p>
         </div>
         <br />
-        <button @click="signUpHandler">Sign Up</button>
+        <button @click="logInHandler">Log In</button>
 
     </div>
 </template>
