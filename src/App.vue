@@ -44,7 +44,7 @@ onUnmounted(() => {
     <div>
       <h1 class="footerElement footerTitle">thread-notes</h1>
       <h4 v-if="userEmail !== null" class="footerElement">for <a class="text">{{ userEmail }}</a> </h4>
-      <p class="footerElement">v 0.6.3</p>
+      <p class="footerElement">v 0.6.5</p>
     </div>
   </div>
 </template>
