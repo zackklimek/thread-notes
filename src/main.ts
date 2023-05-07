@@ -3,15 +3,17 @@ import {createRouter, createWebHashHistory} from "vue-router"
 import './style.css'
 import App from './App.vue'
 import ComposeThread from './components/ComposeThread.vue'
-import NoteGrid from './components/NoteGrid.vue'; 
+import NoteFeed from './components/NoteFeed.vue'; 
 import SignUp from './components/SignUp.vue';
 import LogIn from './components/LogIn.vue'
+import NoteMap from './components/NoteMap.vue'
 
 const routes = [
     {path: "/", component: ComposeThread},
-    {path: "/notes", component: NoteGrid },
+    {path: "/notes", component: NoteFeed },
     {path: "/signUp", component: SignUp},
-    {path: "/logIn", component: LogIn}
+    {path: "/logIn", component: LogIn},
+    {path: "/map", component: NoteMap}
 ]
 
 const router = createRouter({routes: routes,  history: createWebHashHistory()})

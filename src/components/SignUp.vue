@@ -53,13 +53,13 @@ function signUpHandler() {
 }
 
 .card {
-    outline: solid 1px white;
     border-radius: .3em;
     background-color: aliceblue;
     padding-bottom: 1.6em;
     padding-top: .6em;
     padding-left: 3em;
     padding-right: 3em;
+    width: 50%;
 }
 
 input {

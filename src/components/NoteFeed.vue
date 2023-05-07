@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
-import { ref, Ref, onMounted } from "vue";
-import { getAuth } from "firebase/auth";
+import { ref, Ref } from "vue";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, getDocs, collection, QuerySnapshot, QueryDocumentSnapshot } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import firebaseConfig from '../../firebaseConfig';
@@ -9,7 +9,6 @@ import firebaseConfig from '../../firebaseConfig';
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore();
-console.log(auth, db);
 
 const threads: Ref<any[]> = ref([]);
 
@@ -19,11 +18,9 @@ function getThreads() {
         const storePath = collection(db, "users/", auth.currentUser!.uid + "/notes/")
         getDocs(storePath).then((snap: QuerySnapshot) => {
             snap.forEach((doc: QueryDocumentSnapshot) => {
-                console.log(doc.data());
                 threads.value.push(doc.data())
             })
         }).then(() => {
-            console.log('got all threads')
             threads.value.sort((a: any, b: any) => {
                 return new Date(b.threadId).getTime() - new Date(a.threadId).getTime();
             })
@@ -31,8 +28,9 @@ function getThreads() {
     }
 }
 
-onMounted(() => getThreads())
-
+onAuthStateChanged(auth, () => {
+    getThreads();
+})
 </script>
 
 <template>

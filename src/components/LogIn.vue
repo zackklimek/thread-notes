@@ -17,7 +17,6 @@ const passInput: Ref<string> = ref("");
 function logInHandler() {
     signInWithEmailAndPassword(auth, loginInput.value, passInput.value)
         .then(() => {
-            alert("Welcome back");
             loginInput.value = "";
             passInput.value = "";
             router.push({ path: "/" })
@@ -53,13 +52,14 @@ function logInHandler() {
 }
 
 .card {
-    outline: solid 1px white;
     border-radius: .3em;
     background-color: aliceblue;
     padding-bottom: 1.6em;
     padding-top: .6em;
     padding-left: 3em;
     padding-right: 3em;
+    width: 50%;
+
 }
 
 input {

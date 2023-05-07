@@ -68,6 +68,7 @@ function clear(): void {
     titles.value = [''];
     urls.value = [''];
     threadName.value = '';
+    document.getElementById('txt0')!.innerText = "";
 }
 
 function toggleEdit(i: number) {
@@ -327,7 +328,9 @@ onMounted(() => {
                 </span>
                 <div class="pt"></div>
             </div>
-            <button v-if="len > 1" @click="publishNote">Publish</button>
+            <button v-show="len > 1" @click="publishNote">Publish</button>
+            <br />
+            <button v-show="len > 1" @click="clear">Clear</button>
         </div>
         <div v-else>
             <h3>Published.</h3>
@@ -353,7 +356,9 @@ iframe {
     background-color: black;
     color: white;
     font-size: 1.03em;
-    font-family: Helvetica, Arial, sans-serif
+    font-family: Helvetica, Arial, sans-serif;
+    max-height: 2em;
+    margin-top: 1em;
 }
 
 .headerText {
@@ -462,8 +467,8 @@ p {
     position: relative;
     min-height: 5vh;
     word-wrap: break-word;
-    min-width: 40vw;
-    max-width: 40vw;
+    min-width: 50vw;
+    max-width: 50vw;
     padding-right: .66em;
     padding-left: .66em;
     padding-top: 0px;
