@@ -1,3 +1,3 @@
 # \# thread-notes
 
-vue3, typescript
+Vue3, TypeScript, Google Firebase
