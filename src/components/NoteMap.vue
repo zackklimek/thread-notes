@@ -85,6 +85,11 @@ onAuthStateChanged(auth, () => {
     border-radius: 5px;
 }
 
+.card:hover {
+    background-color: white;
+    transform: scale(1.015);
+}
+
 .map {
     padding: 1em;
     width: 70%;
