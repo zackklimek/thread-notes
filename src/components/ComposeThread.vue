@@ -248,7 +248,7 @@ function processPrompt(index: number) {
 
 
     if (edits.value[index] === false) {
-        let prompt: string = 'define ' + document.getElementById('txt' + index)!.innerText;
+        let prompt: string = 'Define or describe the following in English, ~240 characters max.: ' + document.getElementById('txt' + index)!.innerText;
         llm.call(prompt).then((res) => {
             console.log(res);
             document.getElementById('txt' + index)!.innerText = res.trim();
