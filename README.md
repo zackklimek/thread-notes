@@ -1,6 +1,6 @@
 # \# thread-notes
 
-Vue3, TypeScript, Google Firebase
+Vue3, TypeScript, Google Firebase, Langchain
 
 Project setup:
 
