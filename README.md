@@ -8,4 +8,5 @@ Project setup:
 2. `npm install`
 3. Set up Firebase for project: Authentication, Firestore, Storage
 4. Create firebaseConfig.ts in '/'
-5. `npm run dev`
+5. Add `VITE_OPENAI_API_KEY` to .env
+6. `npm run dev`
