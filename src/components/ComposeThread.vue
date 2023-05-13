@@ -246,11 +246,9 @@ function getEmbeddedVideo(index: number) {
 function processPrompt(index: number) {
     console.log("Asks question")
 
-
     if (edits.value[index] === false) {
-        let prompt: string = 'Define or describe the following in English, ~240 characters max.: ' + document.getElementById('txt' + index)!.innerText;
+        let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
         llm.call(prompt).then((res) => {
-            console.log(res);
             document.getElementById('txt' + index)!.innerText = res.trim();
 
         })
