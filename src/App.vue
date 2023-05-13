@@ -16,9 +16,7 @@ onAuthStateChanged(auth, () => {
     userEmail.value = auth.currentUser?.email;
   else {
     userEmail.value = null;
-    router.push({
-      path: '/'
-    })
+    router.push({ path: '/' })
   }
 })
 

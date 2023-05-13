@@ -1,21 +1,26 @@
 <script setup lang="ts">
 
-import { ref, Ref } from "vue";
+import { computed, onMounted, ref, Ref } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { getFirestore, getDocs, collection, QuerySnapshot, QueryDocumentSnapshot } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import firebaseConfig from '../../firebaseConfig';
+import { useRouter } from "vue-router";
 
 const app = initializeApp(firebaseConfig);
+const router = useRouter()
 const auth = getAuth(app);
 const db = getFirestore();
+const storePath = collection(db, "users/", auth.currentUser!.uid + "/notes/")
+
+const sorted: Ref<any> = ref({});
 
 const threads: Ref<any[]> = ref([]);
+
 
 function getThreads() {
     threads.value = []
     if (auth.currentUser !== null) {
-        const storePath = collection(db, "users/", auth.currentUser!.uid + "/notes/")
         getDocs(storePath).then((snap: QuerySnapshot) => {
             snap.forEach((doc: QueryDocumentSnapshot) => {
                 threads.value.push(doc.data())
@@ -24,33 +29,47 @@ function getThreads() {
             threads.value.sort((a: any, b: any) => {
                 return new Date(b.threadId).getTime() - new Date(a.threadId).getTime();
             })
+        }).then(() => {
+            threads.value.forEach((t) => {
+                t.threadId in sorted.value
+                    ? sorted.value[t.threadId].push(t)
+                    : sorted.value[t.threadId] = [t]
+            })
         })
     }
 }
 
 onAuthStateChanged(auth, () => {
+    if (auth === null || auth === undefined) {
+        router.push({ path: '/' })
+    }
     getThreads();
 })
 </script>
 
 <template>
     <h3>Notes</h3>
-    <div id="box" v-for="(t, index) in threads">
-        <div class="noteCard">
-            <div class="headerParent">
-                <h4>{{ new Date(t.threadId).toLocaleDateString('en-us') }}</h4>
-            </div>
-            <div class="body">
-                <h4>{{ t.title }}</h4>
-                <img v-show="'imageUrl' in t" :src="t.imageUrl" />
-                <p :id="index.toString()" class="block">
-                    {{ t.text }}
-                </p>
-                <span v-if="t.tags[0] !== ''" v-for="tag in t.tags" class="tag">
-                    #{{ tag }}</span>
-            </div>
-            <div class="footerParent">
-                <h4>{{ t.threadName }}</h4>
+    <div v-for="th in sorted">
+        <h3>{{ th[0].threadName ? th[0].threadName : th[0].threadId }}</h3>
+        <div id="box" v-for="(n, index) in th.sort((a: any, b: any) => a.threadIndex - b.threadIndex)">
+            <div class="noteCard">
+                <div class="headerParent">
+                    <h4>{{ new Date(n.threadId).toLocaleDateString('en-us') }}</h4>
+                </div>
+                <div class="body">
+                    <h4>{{ n.title }}</h4>
+                    <img v-show="'imageUrl' in n" :src="n.imageUrl" />
+                    <p :id="index.toString()" class="block">
+                        {{ n.text }}
+                    </p>
+                    <span v-if="n.tags[0] !== ''" v-for="tag in n.tags" class="tag">
+                        #{{ tag }}</span>
+                </div>
+                <span class="footerParent">
+                    <h4>{{ n.threadName }}</h4>
+                    <p>{{ n.threadIndex + 1 }}</p>
+                </span>
+                <div></div>
             </div>
         </div>
     </div>
@@ -92,7 +111,7 @@ onAuthStateChanged(auth, () => {
 
 .footerParent {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
 }
 
 .tag:hover {
