@@ -7,6 +7,11 @@ import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, } from 'firebase/storage';
 import firebaseConfig from '../../firebaseConfig';
 
+// https://github.com/hwchase17/langchainjs
+import { OpenAI } from "langchain/llms/openai";
+const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+const llm = new OpenAI({ openAIApiKey: apiKey, temperature: 0 })
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore();
@@ -143,12 +148,10 @@ function publishNote() {
     if (auth.currentUser != null) {
         if (!edits.value.includes(true)) {
             published.value = true;
-
             if (notes.value[notes.value.length - 1] === "")
                 notes.value.pop();
             if (notes.value.length != splitTags.value.length)
                 splitTags.value.pop();
-
             for (let i = 0; i < notes.value.length; i++) {
                 let obj: NoteInput = {
                     text: notes.value[i].trim(),
@@ -240,6 +243,18 @@ function getEmbeddedVideo(index: number) {
     }
 }
 
+function processPrompt(index: number) {
+    console.log("Asks question")
+
+    if (edits.value[index] === false) {
+        let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
+        llm.call(prompt).then((res) => {
+            document.getElementById('txt' + index)!.innerText = res.trim();
+
+        })
+    }
+}
+
 onMounted(() => {
     initialDate.value = new Date().toISOString();
     focusText();
@@ -293,6 +308,7 @@ onMounted(() => {
                     @keyup.enter="enterEvent(index)">
                     <Transition name="slide-fade">{{ i }}</Transition>
                 </p>
+                <button @click="processPrompt(index)" id="promptButton">Define</button>
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">
                     <a :href="urls[index]" target="_blank"> {{ titles[index] }}</a>
                 </h5>
@@ -368,6 +384,10 @@ iframe {
 .parent-container {
     display: flex;
     flex-wrap: wrap;
+}
+
+#promptButton {
+    margin: 1em;
 }
 
 .horizBox {
