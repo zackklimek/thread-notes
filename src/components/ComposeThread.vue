@@ -87,11 +87,15 @@ function toggleEdit(i: number) {
 }
 
 function enterEvent(index: number) {
-    if (edits.value[index] === false) {
-        const len: number = notes.value.length;
-        const id: string = (len - 1).toString();
-        const newVal: string = document.getElementById('txt' + id)!.innerText;
+    const len: number = notes.value.length;
+    const id: string = (len - 1).toString();
+    const newVal: string = document.getElementById('txt' + id)!.innerText;
+    if (edits.value[index] === false && newVal.trim().length > 0) {
         document.getElementById('txt' + id)!.innerText = "";
+        /*
+            Push: note, tags, ursl, editing, title, imageBlob, currentImg,
+                current
+        */
         notes.value = [...notes.value.slice(0, len - 1), newVal, notes.value[len - 1]];
         tags.value.push("");
         urls.value.push("");
@@ -101,6 +105,10 @@ function enterEvent(index: number) {
         currentImg.value = "";
         currentBlob.value = undefined;
         document.getElementById('txt' + id)!.innerText = newVal;
+    }
+    // Prevents user from adding input to empty box on enter
+    else if (newVal.trim().length === 0) {
+        document.getElementById('txt' + id)!.innerText = "";
     }
 }
 
@@ -244,15 +252,22 @@ function getEmbeddedVideo(index: number) {
 }
 
 function processPrompt(index: number) {
-    console.log("Asks question")
-
     if (edits.value[index] === false) {
-        let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
-        llm.call(prompt).then((res) => {
-            document.getElementById('txt' + index)!.innerText = res.trim();
-
-        })
+        // let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
+        // llm.call(prompt).then((res) => {
+        //     document.getElementById('txt' + index)!.innerText = res.trim();
+        // })
+        // Reduce API calls during testing
+        document.getElementById('txt' + index)!.innerText = "DUMMY RES"
     }
+}
+
+function removeNote(index: number) {
+    notes.value.splice(index, 1);
+    titles.value.splice(index, 1);
+    urls.value.splice(index, 1);
+    tags.value.splice(index, 1);
+    edits.value.splice(index, 1);
 }
 
 onMounted(() => {
@@ -275,8 +290,9 @@ onMounted(() => {
     <!-- Need to break this into more modular components -->
     <Transition name="slide-fade">
         <div v-if="!published">
-            <div v-for="(i, index) in   notes  " :id="'box' + index" :class="cardClass" :key="index" @dragover="handleDrag"
-                @drop="handleDrop" @mouseover="() => isHoveringOver = true" @mouseleave="() => isHoveringOver = false">
+            <div v-for="(i, index) in   notes" :id="'box' + index" :class="cardClass" :key="notes[index] + index"
+                @dragover="handleDrag" @drop="handleDrop" @mouseover="() => isHoveringOver = true"
+                @mouseleave="() => isHoveringOver = false">
                 <div class="pt" />
                 <div class="horizBox">
                     <span class="titleBox">
@@ -308,7 +324,10 @@ onMounted(() => {
                     @keyup.enter="enterEvent(index)">
                     <Transition name="slide-fade">{{ i }}</Transition>
                 </p>
-                <button @click="processPrompt(index)" id="promptButton">Define</button>
+                <span>
+                    <button @click="processPrompt(index)" id="promptButton">Define</button>
+                    <button v-if="index < len - 1" @click="removeNote(index)">Remove</button>
+                </span>
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">
                     <a :href="urls[index]" target="_blank"> {{ titles[index] }}</a>
                 </h5>
@@ -344,16 +363,17 @@ onMounted(() => {
                 </span>
                 <div class="pt"></div>
             </div>
-            <button v-show="len > 1" @click="publishNote">Publish</button>
-            <br />
-            <button v-show="len > 1" @click="clear">Clear</button>
+            <span>
+                <button v-show="len > 1" class="borderedButton" @click="clear">Clear</button>
+                <button v-show="len > 1" class="borderedButton" @click="publishNote">Publish</button>
+            </span>
         </div>
         <div v-else>
             <h3>Published.</h3>
             <p>Create a new thread?</p>
             <span>
-                <button class="publishedBtn" @click="clear">Thread</button>
-                <button @click="toCollection" class="publishedBtn">Collection</button>
+                <button @click="clear" class="publishedBtn borderedButton">Thread</button>
+                <button @click="toCollection" class="publishedBtn borderedButton">Collection</button>
             </span>
         </div>
     </Transition>
@@ -513,5 +533,11 @@ p {
     padding: 0;
     margin: 0;
     font-size: 10px;
+}
+
+.borderedButton {
+    background-color: whitesmoke;
+    border: gray;
+    margin: 1em;
 }
 </style>

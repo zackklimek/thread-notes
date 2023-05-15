@@ -1,8 +1,8 @@
 <script setup lang="ts">
 
-import { computed, onMounted, ref, Ref } from "vue";
+import { ref, Ref } from "vue";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getFirestore, getDocs, collection, QuerySnapshot, QueryDocumentSnapshot } from "firebase/firestore";
+import { getFirestore, getDocs, collection, QuerySnapshot, QueryDocumentSnapshot, doc, deleteDoc } from "firebase/firestore";
 import { initializeApp } from "firebase/app";
 import firebaseConfig from '../../firebaseConfig';
 import { useRouter } from "vue-router";
@@ -11,26 +11,26 @@ const app = initializeApp(firebaseConfig);
 const router = useRouter()
 const auth = getAuth(app);
 const db = getFirestore();
-const storePath = collection(db, "users/", auth.currentUser!.uid + "/notes/")
 
 const sorted: Ref<any> = ref({});
 
-const threads: Ref<any[]> = ref([]);
+const notes: Ref<any[]> = ref([]);
 
 
 function getThreads() {
-    threads.value = []
+    notes.value = [];
     if (auth.currentUser !== null) {
+        const storePath = collection(db, "users/", auth.currentUser!.uid + "/notes/");
         getDocs(storePath).then((snap: QuerySnapshot) => {
             snap.forEach((doc: QueryDocumentSnapshot) => {
-                threads.value.push(doc.data())
+                notes.value.push(doc.data())
             })
         }).then(() => {
-            threads.value.sort((a: any, b: any) => {
+            notes.value.sort((a: any, b: any) => {
                 return new Date(b.threadId).getTime() - new Date(a.threadId).getTime();
             })
         }).then(() => {
-            threads.value.forEach((t) => {
+            notes.value.forEach((t) => {
                 t.threadId in sorted.value
                     ? sorted.value[t.threadId].push(t)
                     : sorted.value[t.threadId] = [t]
@@ -39,17 +39,25 @@ function getThreads() {
     }
 }
 
+function deleteNote(note: any) {
+    const path = doc(db, "users/", auth.currentUser!.uid + "/notes/", note.noteId);
+    deleteDoc(path).then(() => {
+        window.location.reload(); //FIXME
+    });
+}
+
 onAuthStateChanged(auth, () => {
     if (auth === null || auth === undefined) {
         router.push({ path: '/' })
     }
     getThreads();
 })
+
 </script>
 
 <template>
     <h3>Notes</h3>
-    <div v-for="th in sorted">
+    <div v-for="th in sorted" :key="th.threadId">
         <h3>{{ th[0].threadName ? th[0].threadName : th[0].threadId }}</h3>
         <div id="box" v-for="(n, index) in th.sort((a: any, b: any) => a.threadIndex - b.threadIndex)">
             <div class="noteCard">
@@ -66,8 +74,8 @@ onAuthStateChanged(auth, () => {
                         #{{ tag }}</span>
                 </div>
                 <span class="footerParent">
-                    <h4>{{ n.threadName }}</h4>
                     <p>{{ n.threadIndex + 1 }}</p>
+                    <button @click="deleteNote(n)">Delete</button>
                 </span>
                 <div></div>
             </div>

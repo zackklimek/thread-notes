@@ -24,6 +24,11 @@ onUnmounted(() => {
   signOut(auth);
 })
 
+function onSignOut(auth: any) {
+  signOut(auth);
+  router.push({ path: '/' })
+}
+
 </script>
 
 <template>
@@ -33,7 +38,7 @@ onUnmounted(() => {
     <RouterLink v-if="userEmail !== null" to="/map"><a class="link">Mapping</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/signUp"><a class="link">Create an Account</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/logIn"><a class="link">Log In</a></RouterLink>
-    <RouterLink v-if="userEmail !== null" @click="() => signOut(auth)" to="/"><a class="link">Sign
+    <RouterLink v-if="userEmail !== null" @click="() => onSignOut(auth)" to="/"><a class="link">Sign
         Out</a>
     </RouterLink>
   </div>

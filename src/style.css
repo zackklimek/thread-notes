@@ -33,13 +33,19 @@ h5 {
 }
 
 button {
-  background-color: aliceblue; 
   color: black;
   font-family: 'Raleway', Helvetica, Arial,sans-serif;
   border-radius: 5px;
   padding: 0.33em;
   max-height: auto;
   cursor: pointer;
+  background: none;
+  border: none;
+}
+
+button:hover{
+  transform: scale(1.06);
+  color: #747bff;
 }
 
 #app {
@@ -55,7 +61,7 @@ button {
     color: #747bff;
   }
   button {
-    background-color: aliceblue;
+    /* background-color: aliceblue; */
   }
 }
 
