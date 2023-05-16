@@ -35,7 +35,6 @@ function onSignOut(auth: any) {
   <div id="navbar">
     <RouterLink to="/"><a class="link">Compose Thread</a></RouterLink>
     <RouterLink v-if="userEmail !== null" to="/notes"><a class="link">View Notes</a></RouterLink>
-    <RouterLink v-if="userEmail !== null" to="/map"><a class="link">Mapping</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/signUp"><a class="link">Create an Account</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/logIn"><a class="link">Log In</a></RouterLink>
     <RouterLink v-if="userEmail !== null" @click="() => onSignOut(auth)" to="/"><a class="link">Sign

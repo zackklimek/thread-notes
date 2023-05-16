@@ -253,12 +253,12 @@ function getEmbeddedVideo(index: number) {
 
 function processPrompt(index: number) {
     if (edits.value[index] === false) {
-        // let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
-        // llm.call(prompt).then((res) => {
-        //     document.getElementById('txt' + index)!.innerText = res.trim();
-        // })
+        let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
+        llm.call(prompt).then((res) => {
+            document.getElementById('txt' + index)!.innerText = res.trim();
+        })
         // Reduce API calls during testing
-        document.getElementById('txt' + index)!.innerText = "DUMMY RES"
+        // document.getElementById('txt' + index)!.innerText = "DUMMY RES"
     }
 }
 

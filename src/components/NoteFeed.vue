@@ -41,6 +41,7 @@ function getThreads() {
 
 function deleteNote(note: any) {
     const path = doc(db, "users/", auth.currentUser!.uid + "/notes/", note.noteId);
+    // Check if image url exists, remove from FB Storage as well if so...
     deleteDoc(path).then(() => {
         window.location.reload(); //FIXME
     });
