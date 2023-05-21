@@ -1,4 +1,4 @@
-# \#thread-notes - Thread-style notetaking application with LangChain/OpenAI text generation from user prompts.
+# \#thread-notes
 
 Vue3, TypeScript, Google Firebase, [LangChain](https://docs.langchain.com/docs/)
 
