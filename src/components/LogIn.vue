@@ -26,7 +26,6 @@ function logInHandler() {
                 alert("Incorrect password")
                 passInput.value = "";
             }
-            console.log(error)
         })
 }
 

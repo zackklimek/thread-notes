@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onUnmounted, onMounted, ref, Ref } from 'vue';
+import { onUnmounted, ref, Ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
@@ -34,7 +34,7 @@ function onSignOut(auth: any) {
 <template>
   <div id="navbar">
     <RouterLink to="/"><a class="link">Compose Thread</a></RouterLink>
-    <RouterLink v-if="userEmail !== null" to="/notes"><a class="link">View Notes</a></RouterLink>
+    <RouterLink v-if="userEmail !== null" to="/notes"><a class="link">View Threads</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/signUp"><a class="link">Create an Account</a></RouterLink>
     <RouterLink v-if="userEmail === null" to="/logIn"><a class="link">Log In</a></RouterLink>
     <RouterLink v-if="userEmail !== null" @click="() => onSignOut(auth)" to="/"><a class="link">Sign
@@ -46,7 +46,7 @@ function onSignOut(auth: any) {
     <div>
       <h1 class="footerElement footerTitle">thread-notes</h1>
       <h4 v-if="userEmail !== null" class="footerElement">for <a class="text">{{ userEmail }}</a> </h4>
-      <p class="footerElement">v 0.7.0</p>
+      <p class="footerElement">v 0.7.3</p>
     </div>
   </div>
 </template>

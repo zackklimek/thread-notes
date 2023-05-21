@@ -252,7 +252,7 @@ function getEmbeddedVideo(index: number) {
 }
 
 function processPrompt(index: number) {
-    if (edits.value[index] === false) {
+    if (edits.value[index] === true || index > len.value - 2) {
         let prompt: string = 'Define or describe the following in ~240 characters max., response should be succinct, not conversational: ' + document.getElementById('txt' + index)!.innerText;
         llm.call(prompt).then((res) => {
             document.getElementById('txt' + index)!.innerText = res.trim();
@@ -325,7 +325,8 @@ onMounted(() => {
                     <Transition name="slide-fade">{{ i }}</Transition>
                 </p>
                 <span>
-                    <button @click="processPrompt(index)" id="promptButton">Define</button>
+                    <button v-if="index > len - 2 || edits[index]" @click="processPrompt(index)"
+                        id="promptButton">Define</button>
                     <button v-if="index < len - 1" @click="removeNote(index)">Remove</button>
                 </span>
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">

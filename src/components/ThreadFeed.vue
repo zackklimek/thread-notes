@@ -13,6 +13,7 @@ const auth = getAuth(app);
 const db = getFirestore();
 
 const sorted: Ref<any> = ref({});
+const show: Ref<any> = ref({});
 
 const notes: Ref<any[]> = ref([]);
 
@@ -31,9 +32,16 @@ function getThreads() {
             })
         }).then(() => {
             notes.value.forEach((t) => {
-                t.threadId in sorted.value
-                    ? sorted.value[t.threadId].push(t)
-                    : sorted.value[t.threadId] = [t]
+                if (t.threadId in sorted.value) {
+                    sorted.value[t.threadId].push(t)
+                }
+                else {
+                    sorted.value[t.threadId] = [t];
+                    show.value[t.threadId] = true;
+                }
+                // t.threadId in sorted.value
+                //     ? sorted.value[t.threadId].push(t)
+                //     : sorted.value[t.threadId] = [t]
             })
         })
     }
@@ -47,6 +55,10 @@ function deleteNote(note: any) {
     });
 }
 
+function threadClick(thrId: string) {
+    show.value[thrId] = !show.value[thrId];
+}
+
 onAuthStateChanged(auth, () => {
     if (auth === null || auth === undefined) {
         router.push({ path: '/' })
@@ -58,9 +70,13 @@ onAuthStateChanged(auth, () => {
 
 <template>
     <h3>Notes</h3>
-    <div v-for="th in sorted" :key="th.threadId">
-        <h3>{{ th[0].threadName ? th[0].threadName : th[0].threadId }}</h3>
-        <div id="box" v-for="(n, index) in th.sort((a: any, b: any) => a.threadIndex - b.threadIndex)">
+    <div class="threadDiv" v-for="(th, i) in sorted" :key="th.threadId">
+        <span>
+            <h3 @click="threadClick(th[0].threadId)" class="threadName">{{ th[0].threadName ? th[0].threadName :
+                th[0].threadId }} </h3>
+        </span>
+        <div id="box" v-if="show[th[0].threadId]"
+            v-for="(n, index) in th.sort((a: any, b: any) => a.threadIndex - b.threadIndex)">
             <div class="noteCard">
                 <div class="headerParent">
                     <h4>{{ new Date(n.threadId).toLocaleDateString('en-us') }}</h4>
@@ -85,20 +101,32 @@ onAuthStateChanged(auth, () => {
 </template>
 
 <style scoped>
+span {
+    text-align: left;
+}
+
+.threadName:hover {
+    transform: scale(1.03);
+}
+
+.threadDiv {
+    text-align: center;
+}
+
 .noteCard {
     position: relative;
     min-height: 5vh;
     word-wrap: break-word;
-    min-width: 40vw;
-    max-width: 40vw;
+    min-width: 45vw;
+    max-width: 45vw;
     padding-right: 1.3em;
     padding-left: 1.3em;
     padding-top: .66em;
     background-color: aliceblue;
     color: black;
     margin: 1.33em;
-    box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719);
-    transition: 0.3s;
+    /* box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719); */
+    box-shadow: black;
     border-radius: 5px;
     margin-left: .66em;
 }
