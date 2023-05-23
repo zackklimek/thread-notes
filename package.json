@@ -1,7 +1,7 @@
 {
   "name": "thread-notes",
   "private": true,
-  "version": "0.7.0",
+  "version": "0.7.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "dotenv": "^16.0.3",
     "firebase": "^9.21.0",
     "langchain": "^0.0.75",
+    "sweetalert": "^2.1.2",
     "vue": "^3.2.47",
     "vue-router": "^4.1.6"
   },

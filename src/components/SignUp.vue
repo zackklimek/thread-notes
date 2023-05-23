@@ -1,11 +1,11 @@
 <script setup lang="ts">
 
 import { ref, Ref } from "vue";
-import firebaseConfig from "../../firebaseConfig.ts";
-
-import { createUserWithEmailAndPassword, getAuth, UserCredential } from "firebase/auth";
+import swal from "sweetalert";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
 import { useRouter } from 'vue-router';
+import firebaseConfig from "../../firebaseConfig.ts";
 
 
 const app = initializeApp(firebaseConfig);
@@ -26,14 +26,14 @@ function signUpHandler() {
     }
     else if (passInput.value.length < 8) {
         passInput.value = "";
-        alert("Password must be at least 8 characters.")
+        swal("Password must be at least 8 characters.")
     }
 }
 
 </script>
 
 <template>
-    <h3>Sign Up</h3>
+    <h2>Sign Up</h2>
     <div class="card">
         <h4 class="text">Create an account.</h4>
         <div class="column">

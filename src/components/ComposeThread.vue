@@ -5,6 +5,7 @@ import { getAuth } from "firebase/auth";
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, } from 'firebase/storage';
+import swal from "sweetalert";
 import firebaseConfig from '../../firebaseConfig';
 
 // https://github.com/hwchase17/langchainjs
@@ -129,7 +130,7 @@ function postWithImg(n: NoteInput) {
             const uploadTask = uploadBytesResumable(imageRef, noteImageBlob)
             uploadTask.on("state_changed",
                 () => { },
-                () => { alert("Error: Unsuccessful image upload.") },
+                () => { swal("Error: Unsuccessful image upload.") },
                 () => {
                     getDownloadURL(uploadTask.snapshot.ref).then((imageUrl) => {
                         const imageNote = {
@@ -176,11 +177,11 @@ function publishNote() {
             }
         }
         else {
-            alert("You're still editing at least one note. Are you sure?");
+            swal("You're still editing at least one note. Are you sure?");
         }
     }
     else {
-        alert("Please sign in first.");
+        swal("Please sign in first.");
     }
 }
 
@@ -327,7 +328,7 @@ onMounted(() => {
                 <span>
                     <button v-if="index > len - 2 || edits[index]" @click="processPrompt(index)"
                         id="promptButton">Define</button>
-                    <button v-if="index < len - 1" @click="removeNote(index)">Remove</button>
+                    <button id="removeButton" v-if="index < len - 1" @click="removeNote(index)">Remove</button>
                 </span>
                 <h5 v-if="!edits[index] && urls[index] !== '' && titles[index] !== ''">
                     <a :href="urls[index]" target="_blank"> {{ titles[index] }}</a>
@@ -359,7 +360,7 @@ onMounted(() => {
                         #{{ t }}
                     </span>
                 </span>
-                <span class="right" id="position">
+                <span class="right indexText" id="position">
                     {{ index + 1 }} / {{ len }}
                 </span>
                 <div class="pt"></div>
@@ -370,7 +371,7 @@ onMounted(() => {
             </span>
         </div>
         <div v-else>
-            <h3>Published.</h3>
+            <h2>Published.</h2>
             <p>Create a new thread?</p>
             <span>
                 <button @click="clear" class="publishedBtn borderedButton">Thread</button>
@@ -386,7 +387,7 @@ iframe {
 }
 
 .header {
-    width: 90%;
+    width: 80%;
 }
 
 #titleInput {
@@ -409,6 +410,13 @@ iframe {
 
 #promptButton {
     margin: 1em;
+    border: solid 1px rgb(115, 115, 115);
+}
+
+#removeButton {
+    border: solid 1px rgb(115, 115, 115);
+    margin-top: 1em;
+    margin-bottom: .3em;
 }
 
 .horizBox {
@@ -538,6 +546,7 @@ p {
 
 .borderedButton {
     background-color: whitesmoke;
+    padding: .6em;
     border: gray;
     margin: 1em;
 }

@@ -11,7 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: black;
+  background-color: #000039;
   color: #ffffff;
 }
 
@@ -23,7 +23,15 @@ body {
   min-height: 0;
 }
 
+.indexText {
+  font-family: Helvetica, Arial, sans-serif;
+}
+
 h1, h3, h4 {
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+h2 {
   font-family: Helvetica, Arial, sans-serif;
 }
 

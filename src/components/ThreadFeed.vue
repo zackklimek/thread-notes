@@ -69,7 +69,7 @@ onAuthStateChanged(auth, () => {
 </script>
 
 <template>
-    <h3>Notes</h3>
+    <h2>Threads</h2>
     <div class="threadDiv" v-for="(th, i) in sorted" :key="th.threadId">
         <span>
             <h3 @click="threadClick(th[0].threadId)" class="threadName">{{ th[0].threadName ? th[0].threadName :
@@ -91,7 +91,7 @@ onAuthStateChanged(auth, () => {
                         #{{ tag }}</span>
                 </div>
                 <span class="footerParent">
-                    <p>{{ n.threadIndex + 1 }}</p>
+                    <p class="indexText">{{ index + 1 }}</p>
                     <button @click="deleteNote(n)">Delete</button>
                 </span>
                 <div></div>
@@ -107,6 +107,7 @@ span {
 
 .threadName:hover {
     transform: scale(1.03);
+    text-decoration: underline;
 }
 
 .threadDiv {
@@ -124,11 +125,10 @@ span {
     padding-top: .66em;
     background-color: aliceblue;
     color: black;
-    margin: 1.33em;
-    /* box-shadow: 0 1px 6px rgba(47, 72, 255, 0.719), 0 1px 4px rgba(47, 72, 255, 0.719); */
+    margin-top: 1.5em;
+    margin-bottom: 1.33em;
     box-shadow: black;
     border-radius: 5px;
-    margin-left: .66em;
 }
 
 .body {

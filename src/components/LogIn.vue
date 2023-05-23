@@ -5,7 +5,7 @@ import firebaseConfig from "../../firebaseConfig.ts";
 import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
 import { useRouter } from 'vue-router';
-
+import swal from "sweetalert";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -23,7 +23,7 @@ function logInHandler() {
         })
         .catch((error: any) => {
             if (error.code === 'auth/wrong-password') {
-                alert("Incorrect password")
+                swal("Incorrect password")
                 passInput.value = "";
             }
         })
@@ -32,7 +32,7 @@ function logInHandler() {
 </script>
 
 <template>
-    <h3>Log In</h3>
+    <h2>Log In</h2>
     <div class="card">
         <h4 class="text">Log in to your account.</h4>
         <div class="column">
