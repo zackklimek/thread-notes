@@ -11,3 +11,4 @@ Project setup:
 5. Add `VITE_OPENAI_API_KEY` to .env
 6. `npm run dev`
 
+Further development occurring in (currently) private duplicate repository. 
