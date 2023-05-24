@@ -46,7 +46,7 @@ function onSignOut(auth: any) {
     <div>
       <h1 class="footerElement footerTitle">thread-notes</h1>
       <h4 v-if="userEmail !== null" class="footerElement">for <a class="text">{{ userEmail }}</a> </h4>
-      <p class="footerElement">v 0.7.3</p>
+      <p class="footerElement">v 0.8.0</p>
     </div>
   </div>
 </template>
